@@ -8,6 +8,7 @@ if __name__ == "__main__":
 	print ("a = ", a)
 	print ("b = ", b)
 	print ("a + b", a + b)
-	os.system("dir")
+	c=os.system("dir")
+	print(c)
 
 	#os.system("ifconfig")
