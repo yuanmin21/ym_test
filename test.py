@@ -7,6 +7,7 @@ if __name__ == "__main__":
 	print ("The simple calculator")
 	print ("a = ", a)
 	print ("b = ", b)
+	print("-------------")
 	print ("a + b", a + b)
 	c=os.system("pwd")
 	print(c)
