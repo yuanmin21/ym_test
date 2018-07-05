@@ -9,4 +9,4 @@ if __name__ == "__main__":
 	print ("b = ", b)
 	print ("a + b", a + b)
 
-	os.system("ifconfig")
+	#os.system("ifconfig")
