@@ -1,4 +1,4 @@
-node{
+node('slave1'){
     // Mark the code checkout 'stage'....
     stage('Build'){
 
@@ -9,7 +9,7 @@ node{
    
     // Mark the code run 'stage'....
     stage('Test'){
-	node('slave1') 
+ 
     // Run the program
     sh 'python test.py'
     }

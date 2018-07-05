@@ -11,4 +11,4 @@ if __name__ == "__main__":
 	c=os.system("pwd")
 	print(c)
 
-	#os.system("ifconfig")
+
