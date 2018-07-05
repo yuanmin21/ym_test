@@ -8,7 +8,7 @@ if __name__ == "__main__":
 	print ("a = ", a)
 	print ("b = ", b)
 	print ("a + b", a + b)
-	c=os.system("dir")
+	c=os.system("pwd")
 	print(c)
 
 	#os.system("ifconfig")
