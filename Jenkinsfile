@@ -3,7 +3,7 @@ node('slave1'){
     stage('Build'){
 
     // Get some code from a GitHub repository
-    git([url: 'https://github.com/oceanchiou/Test.git', branch: 'master'])
+    git([url: 'https://github.com/yuanmin21/ym_test.git', branch: 'master'])
     // Mark the code build 'stage'....
     }
    
