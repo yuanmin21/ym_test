@@ -1,5 +1,7 @@
 def CD_1_SSH_ID=env.CD_1_SSH_ID
+def SH_1_SSH_ID=env.SH_1_SSH_ID
 println CD_1_SSH_ID
+println SH_1_SSH_ID
 node('slave1'){
     // Mark the code checkout 'stage'....
     stage('Build'){
@@ -13,7 +15,8 @@ node('slave1'){
     stage('Test'){
 	//sh script:"ssh root@10.25.132.123 cd /home/workspace;python3 test.py"
     sh script:"ssh $CD_1_SSH_ID 'cd /home/workspace;python3 test.py'"
-   
+    sh script:"ssh $SH_1_SSH_ID"
+    
     // Run the program
     //sh 'python test.py'
     }
