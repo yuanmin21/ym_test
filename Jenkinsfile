@@ -9,7 +9,7 @@ node('slave1'){
    
     // Mark the code run 'stage'....
     stage('Test'){
- 
+	sh script:"ssh $root@10.25.132.123"
     // Run the program
     sh 'python test.py'
     }
