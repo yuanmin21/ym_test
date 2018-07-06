@@ -12,6 +12,6 @@ node('slave1'){
 	sh script:"ssh root@10.25.132.123 cd /home/workspace;python3 test.py"
 
     // Run the program
-    sh 'python test.py'
+    //sh 'python test.py'
     }
 }
