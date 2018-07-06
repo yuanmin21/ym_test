@@ -1,3 +1,5 @@
+def CD_1_SSH_ID=env.CD_1_SSH_ID
+println CD_1_SSH_ID
 node('slave1'){
     // Mark the code checkout 'stage'....
     stage('Build'){
