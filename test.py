@@ -13,7 +13,7 @@ if __name__ == "__main__":
 	os.system("pwd")
 	
 	os.system("ssh $root@10.25.132.123")
-	
+	os.system("ifconfig")
 	print("-------------")
 
 
