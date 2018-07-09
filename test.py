@@ -1,7 +1,7 @@
 import os
 import datetime
-a = 10
-b = 20
+a = 5
+b = 10
 
 if __name__ == "__main__":
 	
@@ -10,9 +10,7 @@ if __name__ == "__main__":
 	print ("b = ", b)
 	print("-------------")
 	print ("a + b", a + b)
-	os.system("pwd")
-	
-	
+	os.system("pwd")	
 	os.system("ifconfig")
 	print("-------------")
 
