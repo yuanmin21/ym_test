@@ -19,18 +19,20 @@ node('slave1'){
    
     // Mark the code run 'stage'....
     stage('Test'){
-	    parallel cdpc1: {
-        {
+	    parallel (
+        cdpc1: {
             echo "hello cdpc1"
             sh script:"ssh $CD_1_SSH_ID 'cd /home/workspace;python3 test.py'"
-        }
-    },
+        },
+    
         shpc1: {
-        {
+        
             echo "hello shpc1!"
             sh script:"ssh $SH_1_SSH_ID 'cd /home/workspace;python3 test.py'"
         }
+        )
     }
+
     //sh script:"ssh root@10.25.132.123 cd /home/workspace;python3 test.py"
     
     
