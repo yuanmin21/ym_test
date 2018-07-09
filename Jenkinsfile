@@ -19,7 +19,12 @@ node('slave1'){
     //git([url: 'https://github.com/yuanmin21/ym_test.git', branch: 'master'])
     // Mark the code build 'stage'....
     }
-   
+    stage('Get the test node info'){
+
+    println CD_1_SSH_ID
+    println SH_1_SSH_ID
+    println CD_2_SSH_ID
+    }
     // Mark the code run 'stage'....
     stage('Test at Multi PC'){
 	    parallel (
