@@ -39,5 +39,5 @@ node('slave1'){
     
     // Run the program
     //sh 'python test.py'
-    }
+
 }
