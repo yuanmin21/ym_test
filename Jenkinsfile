@@ -7,7 +7,7 @@ def Nodelist = [
     [name : CD_1_SSH_ID]
 ]
 
-Nodelist.each{Node -> println "\r\n Test node is " + "$Node.name"
+//Nodelist.each{Node -> println "\r\n Test node is " + "$Node.name"
 node('slave1'){
     // Mark the code checkout 'stage'....
     stage('Build and Chekout'){
