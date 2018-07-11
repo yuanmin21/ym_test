@@ -45,7 +45,7 @@ node('slave1'){
 
         IOL_cdpc2: {
             echo "hello cdpc2"
-            sh script:"ssh $CD_2_SSH_ID 'cd /home/workspace;python3 test.py'"
+            sh script:"ssh $CD_2_SSH_ID 'cd /home/workspace;python iolinteract.py testcase'"
         }
 
         )
