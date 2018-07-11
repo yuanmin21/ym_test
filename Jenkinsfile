@@ -30,9 +30,9 @@ node('slave1'){
 	    parallel (
         fio_cdpc1: {
             echo "hello cdpc1"
-            sh script:"ssh $CD_1_SSH_ID 'cd /home/workspace;python3 test.py > log.txt'"
+            sh script:"ssh $CD_1_SSH_ID 'cd /home/workspace;python3 test.py > /home/workspace/logs/cd1_log.txt'"
 
-            sh script: "scp $CD_1_SSH_ID:/home/workspace/*txt ./"
+            sh script: "scp $CD_1_SSH_ID:/home/workspace/logs/*txt ./"
             
             archiveArtifacts artifacts: '*.txt', fingerprint: true   
         },
@@ -46,6 +46,10 @@ node('slave1'){
         IOL_cdpc2: {
             echo "hello cdpc2"
             sh script:"ssh $CD_2_SSH_ID 'cd /home/workspace;python iolinteract.py /home/cdpc1/iol_interact-9.0b/nvme/manage testcase'"
+
+            sh script: "scp $CD_2_SSH_ID:/home/workspace/logs/*txt ./"
+            
+            archiveArtifacts artifacts: '*.txt', fingerprint: true   
         }
 
         )
