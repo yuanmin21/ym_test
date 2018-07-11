@@ -30,7 +30,9 @@ node('slave1'){
 	    parallel (
         fio_cdpc1: {
             echo "hello cdpc1"
-            sh script:"ssh $CD_1_SSH_ID 'cd /home/workspace;python3 test.py'"
+            sh script:"ssh $CD_1_SSH_ID 'cd /home/workspace;python3 test.py > log.txt'"
+
+            archiveArtifacts artifacts: '**/log.txt', fingerprint: true
         },
     
         Marvo_shpc1: {
