@@ -32,7 +32,9 @@ node('slave1'){
             echo "hello cdpc1"
             sh script:"ssh $CD_1_SSH_ID 'cd /home/workspace;python3 test.py > log.txt'"
 
-            archiveArtifacts artifacts: '**/log.txt', fingerprint: true
+            sh script: "scp $CD_1_SSH_ID:/home/workspace/*txt ./"
+            
+            archiveArtifacts artifacts: '*.txt', fingerprint: true   
         },
     
         Marvo_shpc1: {
