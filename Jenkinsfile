@@ -47,7 +47,9 @@ node('slave1'){
 
         IOL_cdpc2: {
             echo "hello cdpc2"
-            sh script:"ssh $CD_2_SSH_ID 'cd /home/workspace;python iolinteract.py /home/cdpc1/iol_interact-9.0b/nvme/manage testcase >/home/workspace/logs/cd2_log.txt'"
+            sh script:"ssh $CD_2_SSH_ID 'cd /home/workspace;python python dfvFIO/
+            sh script:"ssh $CD_2_SSH_ID 'cd /home/workspace;python FIO/runFIO.py -f=precommit.fio'"
+            //sh script:"ssh $CD_2_SSH_ID 'cd /home/workspace;python iolinteract.py /home/cdpc1/iol_interact-9.0b/nvme/manage testcase >/home/workspace/logs/cd2_log.txt'"
 
             sh script: "scp $CD_2_SSH_ID:/home/workspace/logs/*txt ./"
             
