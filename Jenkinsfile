@@ -42,17 +42,17 @@ node('slave1'){
         Marvo_shpc1: {
         
             echo "hello shpc1!"
-            sh script:"ssh $SH_1_SSH_ID 'cd /home/workspace;python3 test.py'"
+            //sh script:"ssh $SH_1_SSH_ID 'cd /home/workspace;python3 test.py'"
         },
 
         IOL_cdpc2: {
             echo "captrue uart log"
-            sh script:"ssh $CD_2_SSH_ID 'cd /home/workspace/dfvs/user_case/testcases/;python2.7 berw_test.py -p '10.25.132.101' -c fiotest'"
+            sh script:"ssh $CD_2_SSH_ID 'cd /home/workspace/dfvs/user_case/testcases/; python2.7 test.py -p 10.25.132.101'"
             echo "start fio test"
-            sh script:"ssh $CD_2_SSH_ID 'cd /home/workspace/FIO;python runFIO.py -f=precommit.fio -c=/dev/ttyUSB1 -b=115200 -r=10.25.132.101'"
+            
             //sh script:"ssh $CD_2_SSH_ID 'cd /home/workspace;python iolinteract.py /home/cdpc1/iol_interact-9.0b/nvme/manage testcase >/home/workspace/logs/cd2_log.txt'"
 
-            sh script: "scp $CD_2_SSH_ID:/home/workspace/FIO/*txt ./"
+            sh script: "scp $CD_2_SSH_ID:/home/workspace//dfvs/user_case/Logs/*log ./"
             sh script: "scp $CD_2_SSH_ID:/home/workspace/dfvs/user_case/testcases/*.log ./"
             archiveArtifacts artifacts: '*.txt', fingerprint: true   
         }
