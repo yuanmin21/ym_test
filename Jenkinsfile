@@ -47,7 +47,7 @@ node('slave1'){
 
         IOL_cdpc2: {
             echo "captrue uart log"
-             sh script:"ssh su ym"
+          
             sh script:"ssh $CD_2_SSH_ID 'cd /home/workspace/dfvs/user_case/testcases/; python2.7 test.py -p 10.25.132.101'"
             echo "start fio test"
             
