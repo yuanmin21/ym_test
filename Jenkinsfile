@@ -30,7 +30,7 @@ node('slave1'){
 	    parallel (
         fio_cdpc1: {
             echo "hello cdpc1"
-            sh script:"ssh $CD_1_SSH_ID 'cd /home/workspace;sudo python3 test.py > /home/workspace/logs/cd1_log.txt'"
+            sh script:"ssh $CD_1_SSH_ID 'cd /home/workspace;python3 test.py'"
 
             sh script: "scp $CD_1_SSH_ID:/home/workspace/logs/*txt ./"
             //sh script: "socat pty,link=./ttyV0,b115200,ispeed=115200,raw,echo=0,waitslave tcp:10.25.132.101:5555"
