@@ -55,7 +55,7 @@ node('slave1'){
         IOL_cdpc2: {
             echo "captrue uart log"
           
-            sh script:"ssh $CD_2_SSH_ID 'cd /home/workspace/dfvs/user_case/testcases/;python2.7 test.py -p 10.25.132.101'"
+            //sh script:"ssh $CD_2_SSH_ID 'cd /home/workspace/dfvs/user_case/testcases/;python2.7 test.py -p 10.25.132.101'"
             echo "start fio test"
             
             //sh script:"ssh $CD_2_SSH_ID 'cd /home/workspace;python iolinteract.py /home/cdpc1/iol_interact-9.0b/nvme/manage testcase >/home/workspace/logs/cd2_log.txt'"
@@ -68,7 +68,7 @@ node('slave1'){
         )
     }
     Map builds = ["build_1":'passed', "build_2":'failed']
-        Map currentTestResults = [
+    Map currentTestResults = [
                   "build_1": collectTestResults('/home/jenkins/workspace/Precommit_Test/×.log')
                 ]
     stage("GenerateXML") {
@@ -82,7 +82,7 @@ node('slave1'){
                   $class: 'JUnitResultArchiver',
                   testResults: '**/ym_test.xml'
                 ])
-        }
+    }
 
     //sh script:"ssh root@10.25.132.123 cd /home/workspace;python3 test.py"
     
