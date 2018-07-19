@@ -69,7 +69,7 @@ node('slave1'){
     }
     Map builds = ["build_1":'passed', "build_2":'failed']
     Map currentTestResults = [
-                  "build_1": collectTestResults('/home/jenkins/workspace/Precommit_Test/*.log')
+                  "build_1": collectTestResults('/home/jenkins/workspace/Precommit_Test/Log_Test.log')
                 ]
     stage("GenerateXML") {
             currentBuild.description = "Test"
