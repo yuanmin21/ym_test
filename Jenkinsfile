@@ -82,6 +82,7 @@ node('slave1'){
                   $class: 'JUnitResultArchiver',
                   testResults: '**/ym_test.xml'
                 ])
+            currentBuild.description = currentBuild.description + "<br /><strong>${resultsSummary(results)}</strong>${resultsAsTable(results)}"
     }
 
     //sh script:"ssh root@10.25.132.123 cd /home/workspace;python3 test.py"
