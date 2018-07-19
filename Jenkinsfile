@@ -1,3 +1,7 @@
+import groovy.xml.*
+import static java.util.UUID.randomUUID
+
+
 def CD_1_SSH_ID=env.CD_1_SSH_ID
 def SH_1_SSH_ID=env.SH_1_SSH_ID
 def CD_2_SSH_ID=env.CD_2_SSH_ID
@@ -10,6 +14,9 @@ def Nodelist = [
     [name : CD_2_SSH_ID]
 ]
 
+def testName = "Jenkins"
+def numberOfBuild = '1'
+//timestamps
 //Nodelist.each{Node -> println "\r\n Test node is " + "$Node.name"
 node('slave1'){
     // Mark the code checkout 'stage'....
@@ -55,11 +62,27 @@ node('slave1'){
 
             sh script: "scp $CD_2_SSH_ID:/home/workspace//dfvs/user_case/Logs/*log ./"
             sh script: "scp $CD_2_SSH_ID:/home/workspace/dfvs/user_case/testcases/*.log ./"
-            archiveArtifacts artifacts: '*.txt', fingerprint: true   
+            archiveArtifacts artifacts: '*.log', fingerprint: true   
         }
 
         )
     }
+    Map builds = ["build_1":'passed', "build_2":'failed']
+        Map currentTestResults = [
+                  "build_1": collectTestResults('/home/jenkins/workspace/Precommit_Test/×.log')
+                ]
+    stage("GenerateXML") {
+            currentBuild.description = "Test"
+            writeFile(file: 'ym_test.xml', text: resultsAsJUnit(currentTestResults))
+            sh script: "ls"
+             // publish html
+            sh script: "pwd"
+            archiveArtifacts(artifacts: 'ym_test.xml', excludes: null)
+            step([
+                  $class: 'JUnitResultArchiver',
+                  testResults: '**/ym_test.xml'
+                ])
+        }
 
     //sh script:"ssh root@10.25.132.123 cd /home/workspace;python3 test.py"
     
@@ -68,4 +91,29 @@ node('slave1'){
     // Run the program
     //sh 'python test.py'
 
+}
+
+
+// Helper functions
+def collectTestResults(logFile) {
+  // Initialize empty result map
+  def resultMap = [:]
+  String  testName   = (logFile =~ /(\w*)\.log/)[0][1]
+  boolean testPassed = readFile(logFile).contains("=== Test Passed OK ===")
+  resultMap << [(testName): testPassed]
+  return resultMap
+}
+
+@NonCPS
+String resultsAsJUnit(def testResults) {
+    StringWriter  stringWriter  = new StringWriter()
+    MarkupBuilder markupBuilder = new MarkupBuilder(stringWriter)
+    // All those delegate calls here are messing up the elegancy of the MarkupBuilder
+    // but are needed due to https://issues.jenkins-ci.org/browse/JENKINS-32766
+    markupBuilder.testsuites {
+        delegate.testsuite(name: "testName", tests: testResults.size(), failures: "1") {
+            delegate.testcase(name: "testName", build_number: "1")            
+        }
+    }  
+  return stringWriter.toString()
 }
