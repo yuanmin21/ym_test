@@ -82,7 +82,6 @@ node('slave1'){
                   $class: 'JUnitResultArchiver',
                   testResults: '**/ym_test.xml'
                 ])
-            currentBuild.description = currentBuild.description + "<br /><strong>${resultsSummary(results)}</strong>${resultsAsTable(results)}"
     }
 
     //sh script:"ssh root@10.25.132.123 cd /home/workspace;python3 test.py"
@@ -95,6 +94,7 @@ node('slave1'){
 }
 }
 
+
 // Helper functions
 def collectTestResults(logFile) {
   // Initialize empty result map
@@ -105,37 +105,6 @@ def collectTestResults(logFile) {
   return resultMap
 }
 
-@NonCPS
-String resultsAsTable(def testResults) {
-  StringWriter  stringWriter  = new StringWriter()
-  MarkupBuilder markupBuilder = new MarkupBuilder(stringWriter)
-
-  // All those delegate calls here are messing up the elegancy of the MarkupBuilder
-  // but are needed due to https://issues.jenkins-ci.org/browse/JENKINS-32766
-  markupBuilder.html {
-    delegate.body {
-      delegate.style(".passed { color: #468847; background-color: #dff0d8; border-color: #d6e9c6; } .failed { color: #b94a48; background-color: #f2dede; border-color: #eed3d7; }", type: 'text/css')
-      delegate.table {
-        testResults.each { test, testResult ->
-          delegate.delegate.tr {
-            delegate.td {
-              delegate.strong("$test")
-              //delegate.a("Drive Log", href: "${env.BUILD_URL}/artifact/${test}_drive_log.tar.gz")
-              //delegate.a("Test Logs", href: "${env.BUILD_URL}/artifact/${test}.tar.gz")
-            }
-          }
-          testResult.each { testName, testPassed ->
-            delegate.delegate.delegate.tr {
-              delegate.td("$testName", class: testPassed ? 'passed' : 'failed')
-            }
-          }
-        }
-      }
-    }
-  }
-
-  return stringWriter.toString()
-}
 @NonCPS
 String resultsAsJUnit(def testResults) {
     StringWriter  stringWriter  = new StringWriter()
