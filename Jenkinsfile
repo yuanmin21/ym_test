@@ -68,9 +68,10 @@ node('slave1'){
 
         )
     }
+    sh script: "ls /home/jenkins/workspace/Precommit_Test/*.log"
     Map builds = ["build_1":'passed', "build_2":'failed']
     Map currentTestResults = [
-                  "build_1": collectTestResults('/home/jenkins/workspace/Precommit_Test/Log_Test.log')
+                  "build_1": collectTestResults('/home/jenkins/workspace/Precommit_Test/*.log')
                 ]
     stage("GenerateXML") {
             currentBuild.description = "Test"
@@ -102,6 +103,7 @@ def collectTestResults(logFile) {
   def resultMap = [:]
   String  testName   = (logFile =~ /(\w*)\.log/)[0][1]
   boolean testPassed = readFile(logFile).contains("=== Test Passed OK ===")
+  //echo "${testPassed}"
   resultMap << [(testName): testPassed]
   return resultMap
 }
