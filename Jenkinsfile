@@ -74,6 +74,14 @@ node('slave1'){
                   "build_1": collectTestResults('/home/jenkins/workspace/Precommit_Test/Log_test.log')
                   "build_2": collectTestResults('/home/jenkins/workspace/Precommit_Test/fw_log.log')
                 ]
+    def logFiles = sh (
+            script: "ls /home/jenkins/workspace/Precommit_Test/*.log",
+            returnStdout:true
+            ).readLines()
+        
+        logFiles.each{ logFile ->
+            collectTestResults(logFile)
+        }               
     stage("GenerateXML") {
             currentBuild.description = "Test"
             writeFile(file: 'ym_test.xml', text: resultsAsJUnit(currentTestResults))
@@ -85,6 +93,7 @@ node('slave1'){
                   $class: 'JUnitResultArchiver',
                   testResults: '**/ym_test.xml'
                 ])
+            currentBuild.description = "<br /></strong>${resultsAsTable(currentTestResults)}"
     }
 
     //sh script:"ssh root@10.25.132.123 cd /home/workspace;python3 test.py"
@@ -109,6 +118,31 @@ def collectTestResults(logFile) {
   return resultMap
 }
 
+
+@NonCPS
+String resultsAsTable(def testResults) {
+  StringWriter  stringWriter  = new StringWriter()
+  MarkupBuilder markupBuilder = new MarkupBuilder(stringWriter)
+
+  // All those delegate calls here are messing up the elegancy of the MarkupBuilder
+  // but are needed due to https://issues.jenkins-ci.org/browse/JENKINS-32766
+  markupBuilder.html {
+    delegate.body {
+      delegate.style(".passed { color: #468847; background-color: #dff0d8; border-color: #d6e9c6; } .failed { color: #b94a48; background-color: #f2dede; border-color: #eed3d7; }", type: 'text/css')
+      delegate.table {
+        testResults.each { test, testResult ->
+          testResult.each { testName, testPassed ->
+            delegate.delegate.delegate.tr {
+              delegate.td("$testName", class: testPassed ? 'passed' : 'failed')
+            }
+          }
+        }
+      }
+    }
+  }
+
+  return stringWriter.toString()
+}
 @NonCPS
 String resultsAsJUnit(def testResults) {
     StringWriter  stringWriter  = new StringWriter()
@@ -116,8 +150,17 @@ String resultsAsJUnit(def testResults) {
     // All those delegate calls here are messing up the elegancy of the MarkupBuilder
     // but are needed due to https://issues.jenkins-ci.org/browse/JENKINS-32766
     markupBuilder.testsuites {
-        delegate.testsuite(name: "testName", tests: testResults.size(), failures: "1") {
-            delegate.testcase(name: "testName", build_number: "1")            
+        testResults.each{ test, testresult ->
+            delegate.delegate.testsuite(name: testresult.testName, tests: testresult.size(), failures: testresult.values().count(false)) {
+                testresult.each{ testName, testPassed ->
+                    delegate.delegate.testcase(name: testName) {
+                        if(!testPassed){
+                            echo "${testResults.testPassed}"
+                            delegate.failure()
+                        }
+                    }
+                }
+            }
         }
     }  
   return stringWriter.toString()
