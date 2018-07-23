@@ -71,8 +71,6 @@ node('slave1'){
     sh script: "ls /home/jenkins/workspace/Precommit_Test/*.log"
    
     Map currentTestResults = [ "Test": collectTestResults()]    
-    
-    
                       
     stage("GenerateXML") {
             currentBuild.description = "Test"
@@ -114,7 +112,7 @@ def collectTestResults() {
 
     logFiles.each{ logFile ->            
             testName   = (logFile =~ /(\w*)\.log/)[0][1]
-            testPassed = readFile(logFile).contains("Pass")
+            testPassed = readFile(logFile).contains("PASS")
             resultMap << [(testName): testPassed]
         }
   return resultMap
