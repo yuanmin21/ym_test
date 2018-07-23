@@ -70,7 +70,7 @@ node('slave1'){
     }
     sh script: "ls /home/jenkins/workspace/Precommit_Test/*.log"
    
-    Map currentTestResults = [ "Test": collectTestResults()]    
+    Map currentTestResults = [ "Test": regressionPassedParser()]    
                       
     stage("GenerateXML") {
             currentBuild.description = "Test"
@@ -123,14 +123,20 @@ def collectTestResults() {
 // Parser for regression test results
 def regressionPassedParser(logFile, resultMap) {
   if (logFile.endsWith("summary.log")) {
+    echo "---log --summary"
     def currentTestSet = ""
     readFile(logFile).split("\n").each { line ->
       switch(line) {
-        case ~/# scripts\/(.*).script/:
+        //case ~/# scripts\/(.*).script/:
+        
+          echo "-----2222"
           currentTestSet = RegexSupport.lastMatcher[0][1]
+          println currentTestSet 
           break
         case ~/.*(FAIL|FATAL|PASS).*\/(.*).log.*/:
+          echo "-----333"
           resultMap << [("${currentTestSet} - ${RegexSupport.lastMatcher[0][2]}" as String): RegexSupport.lastMatcher[0][1] == "PASS"]
+          println resultMap
           break
         default:
           break
