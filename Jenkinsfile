@@ -119,6 +119,27 @@ def collectTestResults() {
         }
   return resultMap
 }
+
+
+
+// Parser for regression test results
+def regressionPassedParser(logFile, resultMap) {
+  if (logFile.endsWith("summary.log")) {
+    def currentTestSet = ""
+    readFile(logFile).split("\n").each { line ->
+      switch(line) {
+        case ~/# scripts\/(.*).script/:
+          currentTestSet = RegexSupport.lastMatcher[0][1]
+          break
+        case ~/.*(FAIL|FATAL|PASS).*\/(.*).log.*/:
+          resultMap << [("${currentTestSet} - ${RegexSupport.lastMatcher[0][2]}" as String): RegexSupport.lastMatcher[0][1] == "PASS"]
+          break
+        default:
+          break
+      }
+    }
+  }
+}
 def logParser(logFile) {
   // Initialize empty result map
   def logMap = [:]
