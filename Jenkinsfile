@@ -128,10 +128,10 @@ def regressionPassedParser(logFile, resultMap) {
     readFile(logFile).split("\n").each { line ->
       switch(line) {
         println line
-        //case ~/# scripts\/(.*).script/:
+        case ~/# scripts\/(.*).script/:
         currentTestSet = RegexSupport.lastMatcher[0][1]
         println currentTestSet 
-         // break
+        break
         case ~/.*(FAIL|FATAL|PASS).*\/(.*).log.*/:
           echo "-----333"
           resultMap << [("${currentTestSet} - ${RegexSupport.lastMatcher[0][2]}" as String): RegexSupport.lastMatcher[0][1] == "PASS"]
