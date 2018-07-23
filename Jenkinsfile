@@ -71,7 +71,7 @@ node('slave1'){
     sh script: "ls /home/jenkins/workspace/Precommit_Test/*.log"
     Map builds = ["build_1":'passed', "build_2":'failed']
     Map currentTestResults = [
-                  "build_1": collectTestResults('/home/jenkins/workspace/Precommit_Test/Log_test.log'),
+                  "build_1": collectTestResults('/home/jenkins/workspace/Precommit_Test/summary.log'),
                   "build_2": collectTestResults('/home/jenkins/workspace/Precommit_Test/fw_log.log')
                 ]
     def logFiles = sh (
