@@ -129,10 +129,10 @@ def regressionPassedParser() {
             ).readLines()
     
     readFile(logFile).split("\n").each { line ->
-     
+        println line
         testName   = (logFile =~ /(\w*)\.log/)[0][1]
         println testName
-        currentTestSet = RegexSupport.lastMatcher[0][1]
+        //currentTestSet = RegexSupport.lastMatcher[0][1]
         println currentTestSet 
         break
         testPassed = line.contains("PASS")
