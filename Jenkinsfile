@@ -127,10 +127,9 @@ def regressionPassedParser() {
             script: "ls /home/jenkins/workspace/Precommit_Test/summary.log",
             returnStdout:true
             ).readLines()
-    def currentTestSet = ""
-
+    
     readFile(logFile).split("\n").each { line ->
-      switch(line) {
+     
         testName   = (logFile =~ /(\w*)\.log/)[0][1]
         println testName
         currentTestSet = RegexSupport.lastMatcher[0][1]
@@ -139,9 +138,7 @@ def regressionPassedParser() {
         testPassed = line.contains("PASS")
         resultMap << [(testName): testPassed]
         println resultMap
-       
-      }
-    
+ 
     }
     return resultMap  
   
