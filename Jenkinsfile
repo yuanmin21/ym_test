@@ -118,40 +118,32 @@ def collectTestResults() {
   return resultMap
 }
 
-
-
 // Parser for regression test results
-def regressionPassedParser() {
-  
-    
+def regressionPassedParser() {   
     String  testName
     boolean testPassed 
-
     def resultMap = [:]
     def logFiles = sh (
             script: "ls /home/jenkins/workspace/Precommit_Test/summary.log",
             returnStdout:true
             ).readLines()
-
     def currentTestSet = ""
 
     readFile(logFile).split("\n").each { line ->
       switch(line) {
-        
-        case ~/# scripts\/(.*).script/:
+        testName   = (logFile =~ /(\w*)\.log/)[0][1]
+        println testName
         currentTestSet = RegexSupport.lastMatcher[0][1]
         println currentTestSet 
         break
-        case ~/.*(FAIL|FATAL|PASS).*\/(.*).log.*/:
-         
-          resultMap << [("${currentTestSet} - ${RegexSupport.lastMatcher[0][2]}" as String): RegexSupport.lastMatcher[0][1] == "PASS"]
-          println resultMap
-          break
-        default:
-          break
+        testPassed = line.contains("PASS")
+        resultMap << [(testName): testPassed]
+        println resultMap
+       
       }
-    return resultMap  
+    
     }
+    return resultMap  
   
 }
 def logParser(logFile) {
