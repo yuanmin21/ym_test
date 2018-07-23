@@ -69,19 +69,11 @@ node('slave1'){
         )
     }
     sh script: "ls /home/jenkins/workspace/Precommit_Test/*.log"
-    Map builds = ["build_1":'passed', "build_2":'failed']
-    Map currentTestResults = [
-                  "build_1": collectTestResults('/home/jenkins/workspace/Precommit_Test/summary.log'),
-                  "build_2": collectTestResults('/home/jenkins/workspace/Precommit_Test/fw_log.log')
-                ]
-    def logFiles = sh (
-            script: "ls /home/jenkins/workspace/Precommit_Test/*.log",
-            returnStdout:true
-            ).readLines()
-        
-        logFiles.each{ logFile ->
-            collectTestResults(logFile)
-        }               
+   
+    Map currentTestResults = [ "Test": collectTestResults()]    
+    
+    
+                      
     stage("GenerateXML") {
             currentBuild.description = "Test"
             writeFile(file: 'ym_test.xml', text: resultsAsJUnit(currentTestResults))
@@ -93,6 +85,7 @@ node('slave1'){
                   $class: 'JUnitResultArchiver',
                   testResults: '**/ym_test.xml'
                 ])
+            //Publish the Table  
             currentBuild.description = "<br /></strong>${resultsAsTable(currentTestResults)}"
     }
     sh "rm -rf *.log"
@@ -109,16 +102,30 @@ node('slave1'){
 
 
 // Helper functions
-def collectTestResults(logFile) {
+def collectTestResults() {
   // Initialize empty result map
-  def resultMap = [:]
-  String  testName   = (logFile =~ /(\w*)\.log/)[0][1]
-  boolean testPassed = readFile(logFile).contains("=== Test Passed OK ===")
-  //echo "${testPassed}"
-  resultMap << [(testName): testPassed]
+    String  testName
+    boolean testPassed 
+    def resultMap = [:]
+    def logFiles = sh (
+            script: "ls /home/jenkins/workspace/Precommit_Test/summary.log",
+            returnStdout:true
+            ).readLines()
+
+    logFiles.each{ logFile ->            
+            testName   = (logFile =~ /(\w*)\.log/)[0][1]
+            testPassed = readFile(logFile).contains("Pass")
+            resultMap << [(testName): testPassed]
+        }
   return resultMap
 }
-
+def logParser(logFile) {
+  // Initialize empty result map
+  def logMap = [:]
+  String  testName = (logFile =~ /(\w*)\.log/)[0][1]
+  logMap << [(testName): logFile]
+  return logMap
+}
 
 @NonCPS
 String resultsAsTable(def testResults) {
@@ -144,6 +151,9 @@ String resultsAsTable(def testResults) {
 
   return stringWriter.toString()
 }
+
+
+
 @NonCPS
 String resultsAsJUnit(def testResults) {
     StringWriter  stringWriter  = new StringWriter()
