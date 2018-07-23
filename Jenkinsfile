@@ -60,7 +60,7 @@ node('slave1'){
             
             //sh script:"ssh $CD_2_SSH_ID 'cd /home/workspace;python iolinteract.py /home/cdpc1/iol_interact-9.0b/nvme/manage testcase >/home/workspace/logs/cd2_log.txt'"
 
-            sh script: "scp $CD_2_SSH_ID:/home/workspace/Logs/*log ./"
+            //sh script: "scp $CD_2_SSH_ID:/home/workspace/Logs/*log ./"
             sh script: "scp $CD_2_SSH_ID:/home/workspace/FIO/*.log ./"
             archiveArtifacts artifacts: '*.log', fingerprint: true   
             //sh "rm -rf *.log"
