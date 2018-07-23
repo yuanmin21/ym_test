@@ -63,7 +63,7 @@ node('slave1'){
             sh script: "scp $CD_2_SSH_ID:/home/workspace/Logs/*log ./"
             sh script: "scp $CD_2_SSH_ID:/home/workspace/FIO/*.log ./"
             archiveArtifacts artifacts: '*.log', fingerprint: true   
-            sh "rm -rf *.log"
+            //sh "rm -rf *.log"
         }
 
         )
@@ -95,7 +95,8 @@ node('slave1'){
                 ])
             currentBuild.description = "<br /></strong>${resultsAsTable(currentTestResults)}"
     }
-
+    sh "rm -rf *.log"
+    sh "rm -rf *.txt"
     //sh script:"ssh root@10.25.132.123 cd /home/workspace;python3 test.py"
     
     
