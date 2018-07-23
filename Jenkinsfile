@@ -55,7 +55,7 @@ node('slave1'){
         IOL_cdpc2: {
             echo "captrue uart log"
           
-            sh script:"ssh $CD_2_SSH_ID 'cd /home/workspace/FIO;python2.7 test.py -p 10.25.132.101'"
+            //sh script:"ssh $CD_2_SSH_ID 'cd /home/workspace/FIO;python2.7 test.py -p 10.25.132.101'"
             echo "start fio test"
             
             //sh script:"ssh $CD_2_SSH_ID 'cd /home/workspace;python iolinteract.py /home/cdpc1/iol_interact-9.0b/nvme/manage testcase >/home/workspace/logs/cd2_log.txt'"
@@ -134,7 +134,7 @@ def regressionPassedParser() {
             testName   = (logFile =~ /(\w*)\.log/)[0][1]
             println testName
             //currentTestSet = RegexSupport.lastMatcher[0][1]
-            println currentTestSet 
+            //println currentTestSet 
             break
             testPassed = line.contains("PASS")
             resultMap << [(testName): testPassed]
