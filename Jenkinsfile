@@ -127,7 +127,7 @@ def regressionPassedParser(logFile, resultMap) {
     def currentTestSet = ""
     readFile(logFile).split("\n").each { line ->
       switch(line) {
-        println line
+        
         case ~/# scripts\/(.*).script/:
         currentTestSet = RegexSupport.lastMatcher[0][1]
         println currentTestSet 
