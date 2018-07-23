@@ -129,7 +129,7 @@ def regressionPassedParser(logFile, resultMap) {
       switch(line) {
         //case ~/# scripts\/(.*).script/:
         
-          echo "-----2222"
+          
           currentTestSet = RegexSupport.lastMatcher[0][1]
           println currentTestSet 
           break
