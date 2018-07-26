@@ -70,15 +70,25 @@ node('slave1'){
     }
     sh script: "ls /home/jenkins/workspace/Precommit_Test/*.log"
    
-    Map currentTestResults = [ "Test": regressionPassedParser()]    
-                      
+    //Map currentTestResults = [ "Test": regressionPassedParser()]    
+    //Map currentTestResults = [ "Build": BuildStagePassedParser()]
+    Map currentTestResults = [
+                    (test): collectTestResults(                    
+                        test,
+                        settings.passedParser
+                        )
+                    ]
+    results << currentTestResults   
+
+
+
     stage("GenerateXML") {
             currentBuild.description = "Test"
             writeFile(file: 'ym_test.xml', text: resultsAsJUnit(currentTestResults))
             sh script: "ls"
              // publish html
             sh script: "pwd"
-            archiveArtifacts(artifacts: 'ym_test.xml', excludes: null)
+            //archiveArtifacts(artifacts: 'ym_test.xml', excludes: null)
             step([
                   $class: 'JUnitResultArchiver',
                   testResults: '**/ym_test.xml'
@@ -99,23 +109,31 @@ node('slave1'){
 }
 
 
+/
 // Helper functions
-def collectTestResults() {
-  // Initialize empty result map
-    String  testName
-    boolean testPassed 
+def collectTestResults(String test, Closure passedParser) {
+    // Initialize empty result map
     def resultMap = [:]
+
+    // Gather all the logfiles produced
+    String copyPath = "$env.ARTIFACTS_COPY_PATH"
     def logFiles = sh (
-            script: "ls /home/jenkins/workspace/Precommit_Test/summary.log",
+            script: "ls " + copyPath + "/testlogs/${test}/*.log",
             returnStdout:true
             ).readLines()
 
-    logFiles.each{ logFile ->            
-            testName   = (logFile =~ /(\w*)\.log/)[0][1]
-            testPassed = readFile(logFile).contains("PASS")
-            resultMap << [(testName): testPassed]
-        }
-  return resultMap
+    // Extract the test name and result from each logfile    
+    logFiles.each { logFile ->
+        passedParser(logFile, resultMap)
+    }
+    // Store the zips as a tar file
+    archiveArtifacts artifacts: "${test}.tar.gz", allowEmptyArchive: true
+
+    // Cleanup
+    sh "rm -rf testlogs/${test} ${test}.tar.gz"
+
+    // Return the accumulated result
+    return resultMap
 }
 
 // Parser for regression test results
@@ -144,6 +162,20 @@ def regressionPassedParser() {
     return resultMap  
   
 }
+
+// Parser for regression test results
+def jsonTypePassedParser(logFile, resultMap) {   
+    String  testName
+    boolean testPassed 
+    readFile(logFile).split("\n").each { line ->
+        testName = line.subSequence(0,line.lastIndexOf(":"))   
+        testPassed = line.contains("PASS")
+        resultMap << [(testName): testPassed]
+        println resultMap
+    }    
+    return resultMap  
+}
+
 def logParser(logFile) {
   // Initialize empty result map
   def logMap = [:]
@@ -164,7 +196,14 @@ String resultsAsTable(def testResults) {
       delegate.style(".passed { color: #468847; background-color: #dff0d8; border-color: #d6e9c6; } .failed { color: #b94a48; background-color: #f2dede; border-color: #eed3d7; }", type: 'text/css')
       delegate.table {
         testResults.each { test, testResult ->
-          testResult.each { testName, testPassed ->
+            delegate.delegate.tr {
+                        delegate.td {
+                            delegate.strong("[Stage] Build ")
+                            delegate.strong("$test")
+                            delegate.a("Build Logs", href: "${env.BUILD_URL}/artifact/" + "${test}.tar.gz")
+                        }
+                    }
+            testResult.each { testName, testPassed ->
             delegate.delegate.delegate.tr {
               delegate.td("$testName", class: testPassed ? 'passed' : 'failed')
             }
@@ -201,3 +240,4 @@ String resultsAsJUnit(def testResults) {
     }  
   return stringWriter.toString()
 }
+
