@@ -1,6 +1,11 @@
 import groovy.xml.*
 import static java.util.UUID.randomUUID
 
+println JENKINS_HOME
+println JOB_NAME
+println JOB_BASE_NAME
+
+
 
 def CD_1_SSH_ID=env.CD_1_SSH_ID
 def SH_1_SSH_ID=env.SH_1_SSH_ID
@@ -14,14 +19,63 @@ def Nodelist = [
     [name : CD_2_SSH_ID]
 ]
 
-def testName = "Jenkins"
-def numberOfBuild = '1'
+//def testName = "Jenkins"
+//def numberOfBuild = '1'
+
+def buildCases = [
+    // Precommit
+    "Build": [passedParser: this.&jsonTypePassedParser]
+    
+]
+def testCases = [
+    // Precommit
+    "IOL_cdpc1": [passedParser: this.&jsonTypePassedParser],
+    "Marvo_shpc1": [passedParser: this.&jsonTypePassedParser],
+    "FIO_cdpc2": [passedParser: this.&jsonTypePassedParser]
+]
+def buildcases = ["Build"]
+
+def testcases = ["IOL_cdpc1","Marvo_shpc1","FIO_cdpc2"]
+
 timestamps{
 //Nodelist.each{Node -> println "\r\n Test node is " + "$Node.name"
 node('slave1'){
     // Mark the code checkout 'stage'....
-    stage('Build and Chekout'){
-
+    String copyPath = WORKSPACE
+    stage('Build'){
+        WORKSPACE
+        writeFile(file: 'Test/1098R20_SDK_sdk_nvme_ramdrive_debug.log', text: "Test")
+        writeFile(file: 'Test/ASIC_NVME_Ramdisk_0.log', text: "Test")
+        writeFile(file: 'Test/C1_ATCM.log', text: "Test")
+        def results = [:]
+            buildcases.each { test ->
+                println test
+                def settings = buildCases[test]
+                
+                sh script: "mkdir -p testlogs/${test}"
+                sh script: "tar -zPcv -f ${test}.tar.gz Test/*.log"
+                //archiveArtifacts(artifacts: "${test}.tar.gz", excludes: null)
+                sh script: "python2.7 checkfile.py"
+                
+                //Map currentTestResults = [ "Build": BuildStagePassedParser()]
+                Map currentTestResults = [
+                    (test): collectTestResults(                    
+                        test,
+                        settings.passedParser
+                        )
+                    ]
+                results << currentTestResults    
+            
+                writeFile(file: 'ym_test.xml', text: resultsAsJUnit(currentTestResults))
+                //Generate the Junit Report 
+                //archiveArtifacts(artifacts: 'ocean_test.xml', excludes: null)
+                step([
+                    $class: 'JUnitResultArchiver',
+                    testResults: '**/ym_test.xml'
+                    ])
+            }
+            //Publish the Table      
+            currentBuild.description = "<br /></strong>${resultsAsTable(results)}"
     // Get some code from a GitHub repository
     //git([url: 'https://github.com/yuanmin21/ym_test.git', branch: 'master'])
     // Mark the code build 'stage'....
@@ -34,91 +88,99 @@ node('slave1'){
     }
     // Mark the code run 'stage'....
     stage('Test at Multi PC'){
-	    parallel (
-        fio_cdpc1: {
+        
+        parallel (
+            
+        IOL_cdpc1: {
             echo "hello cdpc1"
             sh script:"ssh $CD_1_SSH_ID 'cd /home/workspace;python3 test.py'"
-
-            sh script: "scp $CD_1_SSH_ID:/home/workspace/logs/*txt ./"
-            //sh script: "socat pty,link=./ttyV0,b115200,ispeed=115200,raw,echo=0,waitslave tcp:10.25.132.101:5555"
-        
+            sh script: "mkdir -p testlogs/IOL_cdpc1"
+            sh script: "scp $CD_1_SSH_ID:/home/workspace/Logs/*.log ./testlogs/IOL_cdpc1"
             
-            archiveArtifacts artifacts: '*.txt', fingerprint: true   
+            //sh script: "ssh $CD_1_SSH_ID 'rm -rf /home/workspace/Logs/*.log'"
+            //sh script: "scp $CD_2_SSH_ID:/home/workspace/FIO/fw_log.log ./testlogs/${test}"
+            
+            //archiveArtifacts artifacts: '*.txt', fingerprint: true   
         },
     
         Marvo_shpc1: {
         
             echo "hello shpc1!"
+            
+            sh script:"ssh $CD_1_SSH_ID 'cd /home/workspace;python3 test.py'"
+            sh script: "mkdir -p testlogs/IOL_cdpc1"
+            sh script: "scp $CD_1_SSH_ID:/home/workspace/Logs/*.log ./testlogs/IOL_cdpc1"
             //sh script:"ssh $SH_1_SSH_ID 'cd /home/workspace;python3 test.py'"
         },
 
-        IOL_cdpc2: {
+        FIO_cdpc2: {
             echo "captrue uart log"
-          
-            sh script:"ssh $CD_2_SSH_ID 'cd /home/workspace/FIO;python2.7 test.py -p 10.25.132.101'"
+        
+            //sh script:"ssh $CD_2_SSH_ID 'cd /home/workspace/FIO;python2.7 FIO_test.py -p 10.25.132.101'"
             echo "start fio test"
-            
+            sh script: "mkdir -p testlogs/FIO_cdpc2"
+            sh script: "scp $CD_2_SSH_ID:/home/workspace/Logs/*.log ./testlogs/FIO_cdpc2"
+            sh script: "scp $CD_2_SSH_ID:/home/workspace/FIO/fw_log.log ./testlogs/FIO_cdpc2"
+            //sh script: "ssh $CD_2_SSH_ID 'rm -rf /home/workspace/Logs/*.log'"
             //sh script:"ssh $CD_2_SSH_ID 'cd /home/workspace;python iolinteract.py /home/cdpc1/iol_interact-9.0b/nvme/manage testcase >/home/workspace/logs/cd2_log.txt'"
+        } 
+        )   
+        def results = [:]
+                //sh "rm -rf *.log"
+                //sh script: "ls /home/jenkins/workspace/Precommit_Test/*.log"
+        testcases.each { test ->
+            println test
+            def settings = testCases[test]
+                    
+                        //sh script: "mkdir -p testlogs/${test}"
+                        //sh script: "scp $CD_2_SSH_ID:/home/workspace/Logs/*.log ./testlogs/${test}"
+                        //sh script: "scp $CD_2_SSH_ID:/home/workspace/FIO/fw_log.log ./testlogs/${test}"
+                        //archiveArtifacts artifacts: '*.log', fingerprint: true   
+                    
+            sh script: "tar -zPcv -f ${test}.tar.gz testlogs/${test}/*.log"
+                          
+                
+                //String copyPath = WORKSPACE
+                
+                //Map currentTestResults = [ "Test": regressionPassedParser()]    
+                //Map currentTestResults = [ "Build": BuildStagePassedParser()]
+            Map currentTestResults = [
+                (test): collectTestResults(                    
+                    test,
+                    settings.passedParser
+                    )
+                ]
+                results << currentTestResults   
+                writeFile(file: 'ym_test.xml', text: resultsAsJUnit(currentTestResults))
+                //Generate the Junit Report 
+                //archiveArtifacts(artifacts: 'ocean_test.xml', excludes: null)
+                step([
+                    $class: 'JUnitResultArchiver',
+                    testResults: '**/ym_test.xml'
+                    ])
 
-            sh script: "scp $CD_2_SSH_ID:/home/workspace/Logs/*log ./"
-            sh script: "scp $CD_2_SSH_ID:/home/workspace/FIO/*.log ./"
-            archiveArtifacts artifacts: '*.log', fingerprint: true   
-            //sh "rm -rf *.log"
-        }
-
-        )
+                }
+                currentBuild.description = currentBuild.description + "<br /></strong>${resultsAsTable(results)}"
+        
+        
     }
-    sh script: "ls /home/jenkins/workspace/Precommit_Test/*.log"
-   
-    //Map currentTestResults = [ "Test": regressionPassedParser()]    
-    //Map currentTestResults = [ "Build": BuildStagePassedParser()]
-    Map currentTestResults = [
-                    (test): collectTestResults(                    
-                        test,
-                        settings.passedParser
-                        )
-                    ]
-    results << currentTestResults   
 
 
-
-    stage("GenerateXML") {
-            currentBuild.description = "Test"
-            writeFile(file: 'ym_test.xml', text: resultsAsJUnit(currentTestResults))
-            sh script: "ls"
-             // publish html
-            sh script: "pwd"
-            //archiveArtifacts(artifacts: 'ym_test.xml', excludes: null)
-            step([
-                  $class: 'JUnitResultArchiver',
-                  testResults: '**/ym_test.xml'
-                ])
-            //Publish the Table  
-            currentBuild.description = "<br /></strong>${resultsAsTable(currentTestResults)}"
-    }
-    sh "rm -rf *.log"
-    sh "rm -rf *.txt"
-    //sh script:"ssh root@10.25.132.123 cd /home/workspace;python3 test.py"
-    
-    
-    
-    // Run the program
-    //sh 'python test.py'
 
 }
 }
 
 
-/
+
 // Helper functions
 def collectTestResults(String test, Closure passedParser) {
     // Initialize empty result map
     def resultMap = [:]
 
     // Gather all the logfiles produced
-    String copyPath = "$env.ARTIFACTS_COPY_PATH"
+    String copyPath = WORKSPACE
     def logFiles = sh (
-            script: "ls " + copyPath + "/testlogs/${test}/*.log",
+            script: "ls " + copyPath + "/testlogs/${test}/*summary.log",
             returnStdout:true
             ).readLines()
 
@@ -198,9 +260,9 @@ String resultsAsTable(def testResults) {
         testResults.each { test, testResult ->
             delegate.delegate.tr {
                         delegate.td {
-                            delegate.strong("[Stage] Build ")
-                            delegate.strong("$test")
-                            delegate.a("Build Logs", href: "${env.BUILD_URL}/artifact/" + "${test}.tar.gz")
+                            delegate.strong("[Stage] $test ")
+                            //delegate.strong("$test")
+                            delegate.a("$test Logs", href: "${env.BUILD_URL}/artifact/" + "${test}.tar.gz")
                         }
                     }
             testResult.each { testName, testPassed ->
