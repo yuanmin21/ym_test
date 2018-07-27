@@ -108,15 +108,15 @@ node('slave1'){
             echo "hello shpc1!"
             
             sh script:"ssh $CD_1_SSH_ID 'cd /home/workspace;python3 test.py'"
-            sh script: "mkdir -p testlogs/IOL_cdpc1"
-            sh script: "scp $CD_1_SSH_ID:/home/workspace/Logs/*.log ./testlogs/IOL_cdpc1"
+            sh script: "mkdir -p testlogs/Marvo_shpc1"
+            sh script: "scp $CD_1_SSH_ID:/home/workspace/Logs/*.log ./testlogs/Marvo_shpc1"
             //sh script:"ssh $SH_1_SSH_ID 'cd /home/workspace;python3 test.py'"
         },
 
         FIO_cdpc2: {
             echo "captrue uart log"
         
-            //sh script:"ssh $CD_2_SSH_ID 'cd /home/workspace/FIO;python2.7 FIO_test.py -p 10.25.132.101'"
+            sh script:"ssh $CD_2_SSH_ID 'cd /home/workspace/FIO;python2.7 FIO_test.py -p 10.25.132.101'"
             echo "start fio test"
             sh script: "mkdir -p testlogs/FIO_cdpc2"
             sh script: "scp $CD_2_SSH_ID:/home/workspace/Logs/*.log ./testlogs/FIO_cdpc2"
