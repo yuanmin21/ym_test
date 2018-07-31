@@ -116,11 +116,11 @@ node('slave1'){
         FIO_cdpc2: {
             echo "captrue uart log"
         
-            sh script:"ssh $CD_2_SSH_ID 'cd /home/workspace/FIO;python2.7 FIO_test.py -p 10.25.132.101'"
+            sh script:"ssh $CD_2_SSH_ID 'cd /home/workspace/script;python2.7 FIO_test.py -p 10.25.132.101'"
             echo "start fio test"
             sh script: "mkdir -p testlogs/FIO_cdpc2"
             sh script: "scp $CD_2_SSH_ID:/home/workspace/Logs/*.log ./testlogs/FIO_cdpc2"
-            sh script: "scp $CD_2_SSH_ID:/home/workspace/FIO/fw_log.log ./testlogs/FIO_cdpc2"
+            sh script: "scp $CD_2_SSH_ID:/home/workspace/script/fw_log.log ./testlogs/FIO_cdpc2"
             //sh script: "ssh $CD_2_SSH_ID 'rm -rf /home/workspace/Logs/*.log'"
             //sh script:"ssh $CD_2_SSH_ID 'cd /home/workspace;python iolinteract.py /home/cdpc1/iol_interact-9.0b/nvme/manage testcase >/home/workspace/logs/cd2_log.txt'"
         } 
