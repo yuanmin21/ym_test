@@ -1,284 +1,233 @@
+#!/usr/bin/env groovy
+
+import org.jenkinsci.plugins.pipeline.utility.steps.fs.FileWrapper
+import com.cwctravel.hudson.plugins.extended_choice_parameter.ExtendedChoiceParameterDefinition
+import java.net.URLEncoder
+import java.util.regex.Matcher
+import groovy.transform.Field
+import javax.ws.rs.core.UriBuilder
 import groovy.xml.*
 import static java.util.UUID.randomUUID
+///////------
+def slave1Config = [
+    "0" : ['SSH_ID': env.SOC1_0_SSH_ID,'APC_IP': env.SOC1_0_APC_IP,  'APC_SLOT': env.SOC1_0_APC_SLOT,'TARGET_IP': env.SOC1_0_TARGET_IP,'TCP_IP':env.SOC1_0_TCP_IP],
+    "1" : ['SSH_ID': env.SOC1_1_SSH_ID,'APC_IP': env.SOC1_1_APC_IP,  'APC_SLOT': env.SOC1_1_APC_SLOT,'TARGET_IP': env.SOC1_1_TARGET_IP,'TCP_IP':env.SOC1_1_TCP_IP]
+]
+def slave2Config = [
+    "0" : ['SSH_ID': env.SOC2_0_SSH_ID,'APC_IP': env.SOC2_0_APC_IP,  'APC_SLOT': env.SOC2_0_APC_SLOT,'TARGET_IP': env.SOC2_0_TARGET_IP,'TCP_IP':env.SOC2_0_TCP_IP],
+    "1" : ['SSH_ID': env.SOC2_1_SSH_ID,'APC_IP': env.SOC2_1_APC_IP,  'APC_SLOT': env.SOC2_1_APC_SLOT,'TARGET_IP': env.SOC2_1_TARGET_IP,'TCP_IP':env.SOC2_1_TCP_IP],
+    "2" : ['SSH_ID': env.SOC2_2_SSH_ID,'APC_IP': env.SOC2_2_APC_IP,  'APC_SLOT': env.SOC2_2_APC_SLOT,'TARGET_IP': env.SOC2_2_TARGET_IP,'TCP_IP':env.SOC2_2_TCP_IP]
+]
+def configMap = [ (env.SOC1_SLAVENAME) : slave1Config, (env.SOC2_SLAVENAME) : slave2Config]
 
-println JENKINS_HOME
-println JOB_NAME
-println JOB_BASE_NAME
+def toDo = [
+    /* Build with tests */
+    //[ name: '1098R20_Internal_E2e_Bics2_Nvme',              soc: '1098R20',  customer: 'Internal',      target: 'E2e_Bics2_Nvme',                configId: '0',  build: 'windows-build', test: env.SOC2_SLAVENAME],
+
+    /* Build only */
+    //Eldora
+    /* [ name: '1093R21_Internal_E2e_tfx132',           soc: '1093R21',         customer: 'Internal',      target: 'E2e_tfx132',                    configId: '0',  build: 'windows-build' ],
+    [ name: '1093R21_Internal_E2e_tfx132_Mst',       soc: '1093R21',         customer: 'Internal',      target: 'E2e_tfx132_Mst',                configId: '0',  build: 'windows-build' ],
+    //Zao
+    [ name: '1098_Internal_E2e_Bics2_Nvme',                soc: '1098',      customer: 'Internal',      target: 'E2e_Bics2_Nvme',                configId: '0',  build: 'windows-build'],
+    [ name: '1098_Internal_E2e_Bics3_Nvme',                soc: '1098',      customer: 'Internal',      target: 'E2e_Bics3_Nvme',                configId: '0',  build: 'windows-build' ],
+    [ name: '1098_Internal_E2e_Bics2_Nvme_4MediaSpaces',   soc: '1098',      customer: 'Internal',      target: 'E2e_Bics2_Nvme_4MediaSpaces',   configId: '0',  build: 'windows-build' ],
+    [ name: '1098_Internal_E2e_Bics2_Nvme_Historylog',     soc: '1098',      customer: 'Internal',      target: 'E2e_Bics2_Nvme_Historylog',     configId: '0',  build: 'windows-build' ],
+    [ name: '1098_Standard_E2e_Bics2',                     soc: '1098',      customer: 'Standard',      target: 'E2e_Bics2',                     configId: '0',  build: 'windows-build' ],
 
 
+    //ZaoR20
+    [ name: '1098R20_Internal_E2e_Bics2_Nvme_4MediaSpaces', soc: '1098R20',      customer: 'Internal',     target: 'E2e_Bics2_Nvme_4MediaSpaces',  configId: '0',   build: 'windows-build' ],
+    [ name: '1098R20_Internal_E2e_Bics2_Nvme_Historylog',   soc: '1098R20',      customer: 'Internal',     target: 'E2e_Bics2_Nvme_Historylog',    configId: '0',   build: 'windows-build' ],
+    [ name: '1098R20_Internal_E2e_Bics2_Sata',              soc: '1098R20',      customer: 'Internal',     target: 'E2e_Bics2_Sata',               configId: '0',   build: 'windows-build' ],
+    [ name: '1098R20_Internal_E2e_Bics3_Nvme',              soc: '1098R20',      customer: 'Internal',     target: 'E2e_Bics3_Nvme',               configId: '0',   build: 'windows-build' ],
+    [ name: '1098R20_Internal_Bics2_Nvme_Mst_Lite',         soc: '1098R20',      customer: 'Internal',     target: 'Bics2_Nvme_Mst_Lite',          configId: '0',   build: 'windows-build' ],
+    [ name: '1098R20_Internal_E2e_Bics2_Nvme_Mst',          soc: '1098R20',      customer: 'Internal',     target: 'E2e_Bics2_Nvme_Mst',           configId: '0',   build: 'windows-build' ],
+    [ name: '1098R20_Standard_Ramdrive0',                   soc: '1098R20',      customer: 'Standard',     target: 'Ramdrive0',                    configId: '0',   build: 'windows-build' ],*/
+    [ name: '1098R20_Standard_E2e_Bics2',                   soc: '1098R20',      customer: 'Standard',     target: 'E2e_Bics2',                    configId: '0',   build: 'windows-build', test: env.SOC2_SLAVENAME ],
 
-def CD_1_SSH_ID=env.CD_1_SSH_ID
-def SH_1_SSH_ID=env.SH_1_SSH_ID
-def CD_2_SSH_ID=env.CD_2_SSH_ID
-println CD_1_SSH_ID
-println SH_1_SSH_ID
-println CD_2_SSH_ID
-def Nodelist = [
-    [name : CD_1_SSH_ID], 
-    [name : SH_1_SSH_ID],
-    [name : CD_2_SSH_ID]
 ]
 
-//def testName = "Jenkins"
-//def numberOfBuild = '1'
-
-def buildCases = [
+def stageCases = [
     // Precommit
-    "Build": [passedParser: this.&jsonTypePassedParser]
-    
+    "Flash_fw": [passedParser: this.&jsonTypePassedParser], 
+    "FIO": [passedParser: this.&jsonTypePassedParser], 
+    "marvo": [passedParser: this.&jsonTypePassedParser],
+    "IOL": [passedParser: this.&jsonTypePassedParser]
 ]
-def testCases = [
-    // Precommit
-    "IOL_cdpc1": [passedParser: this.&jsonTypePassedParser],
-    "Marvo_shpc1": [passedParser: this.&jsonTypePassedParser],
-    "FIO_cdpc2": [passedParser: this.&jsonTypePassedParser]
-]
-def buildcases = ["Build"]
+def testcases = ["Flash_fw","FIO", "marvo","IOL"]
 
-def testcases = ["IOL_cdpc1","Marvo_shpc1","FIO_cdpc2"]
-
-timestamps{
-//Nodelist.each{Node -> println "\r\n Test node is " + "$Node.name"
-node('slave1'){
-    // Mark the code checkout 'stage'....
-    String copyPath = WORKSPACE
-    stage('Build'){
-        WORKSPACE
-        writeFile(file: 'Test/1098R20_SDK_sdk_nvme_ramdrive_debug.log', text: "Test")
-        writeFile(file: 'Test/ASIC_NVME_Ramdisk_0.log', text: "Test")
-        writeFile(file: 'Test/C1_ATCM.log', text: "Test")
-        def results = [:]
-            buildcases.each { test ->
-                println test
-                def settings = buildCases[test]
-                
-                sh script: "mkdir -p testlogs/${test}"
-                sh script: "tar -zPcv -f ${test}.tar.gz Test/*.log"
-                //archiveArtifacts(artifacts: "${test}.tar.gz", excludes: null)
-                sh script: "python2.7 checkfile.py"
-                
-                //Map currentTestResults = [ "Build": BuildStagePassedParser()]
-                Map currentTestResults = [
-                    (test): collectTestResults(                    
-                        test,
-                        settings.passedParser
-                        )
-                    ]
-                results << currentTestResults    
-            
-                writeFile(file: 'ym_test.xml', text: resultsAsJUnit(currentTestResults))
-                //Generate the Junit Report 
-                //archiveArtifacts(artifacts: 'ocean_test.xml', excludes: null)
-                step([
-                    $class: 'JUnitResultArchiver',
-                    testResults: '**/ym_test.xml'
-                    ])
-            }
-            //Publish the Table      
-            currentBuild.description = "<br /></strong>${resultsAsTable(results)}"
-    // Get some code from a GitHub repository
-    //git([url: 'https://github.com/yuanmin21/ym_test.git', branch: 'master'])
-    // Mark the code build 'stage'....
+timestamps {
+    stage("Build") {
+        echo "After Build"
+        currentBuild.description = "Fake Build Stage"        
     }
-    stage('Get the test node info'){
-
-    println CD_1_SSH_ID
-    println SH_1_SSH_ID
-    println CD_2_SSH_ID
-    }
-    // Mark the code run 'stage'....
-    stage('Test at Multi PC'){
-        
-        parallel (
-            
-        IOL_cdpc1: {
-            echo "hello cdpc1"
-            sh script:"ssh $CD_1_SSH_ID 'cd /home/workspace;python3 test.py'"
-            sh script: "mkdir -p testlogs/IOL_cdpc1"
-            sh script: "scp $CD_1_SSH_ID:/home/workspace/Logs/*.log ./testlogs/IOL_cdpc1"
-            
-            //sh script: "ssh $CD_1_SSH_ID 'rm -rf /home/workspace/Logs/*.log'"
-            //sh script: "scp $CD_2_SSH_ID:/home/workspace/FIO/fw_log.log ./testlogs/${test}"
-            
-            //archiveArtifacts artifacts: '*.txt', fingerprint: true   
-        },
     
-        Marvo_shpc1: {
-        
-            echo "hello shpc1!"
-            
-            sh script:"ssh $CD_1_SSH_ID 'cd /home/workspace;python3 test.py'"
-            sh script: "mkdir -p testlogs/Marvo_shpc1"
-            sh script: "scp $CD_1_SSH_ID:/home/workspace/Logs/*.log ./testlogs/Marvo_shpc1"
-            //sh script:"ssh $SH_1_SSH_ID 'cd /home/workspace;python3 test.py'"
-        },
-
-        FIO_cdpc2: {
-            echo "captrue uart log"
-        
-            sh script:"ssh $CD_2_SSH_ID 'cd /home/workspace/script;python2.7 FIO_test.py -p 10.25.132.101'"
-            echo "start fio test"
-            sh script: "mkdir -p testlogs/FIO_cdpc2"
-            sh script: "scp $CD_2_SSH_ID:/home/workspace/Logs/*.log ./testlogs/FIO_cdpc2"
-            sh script: "scp $CD_2_SSH_ID:/home/workspace/script/fw_log.log ./testlogs/FIO_cdpc2"
-            //sh script: "ssh $CD_2_SSH_ID 'rm -rf /home/workspace/Logs/*.log'"
-            //sh script:"ssh $CD_2_SSH_ID 'cd /home/workspace;python iolinteract.py /home/cdpc1/iol_interact-9.0b/nvme/manage testcase >/home/workspace/logs/cd2_log.txt'"
-        } 
-        )   
-        def results = [:]
-                //sh "rm -rf *.log"
-                //sh script: "ls /home/jenkins/workspace/Precommit_Test/*.log"
-        testcases.each { test ->
-            println test
-            def settings = testCases[test]
-                    
-                        //sh script: "mkdir -p testlogs/${test}"
-                        //sh script: "scp $CD_2_SSH_ID:/home/workspace/Logs/*.log ./testlogs/${test}"
-                        //sh script: "scp $CD_2_SSH_ID:/home/workspace/FIO/fw_log.log ./testlogs/${test}"
-                        //archiveArtifacts artifacts: '*.log', fingerprint: true   
-                    
-            sh script: "tar -zPcv -f ${test}.tar.gz testlogs/${test}/*.log"
-                          
-                
-                //String copyPath = WORKSPACE
-                
-                //Map currentTestResults = [ "Test": regressionPassedParser()]    
-                //Map currentTestResults = [ "Build": BuildStagePassedParser()]
-            Map currentTestResults = [
-                (test): collectTestResults(                    
-                    test,
-                    settings.passedParser
-                    )
-                ]
-                results << currentTestResults   
-                writeFile(file: 'ym_test.xml', text: resultsAsJUnit(currentTestResults))
-                //Generate the Junit Report 
-                //archiveArtifacts(artifacts: 'ocean_test.xml', excludes: null)
-                step([
-                    $class: 'JUnitResultArchiver',
-                    testResults: '**/ym_test.xml'
-                    ])
-
+    def Tasks = [:]
+    node("slave1") {
+        toDo.each { task ->           
+            withEnv( //add variable into environment
+                ["SSH_ID=${configMap[task.test][env.EXECUTOR_NUMBER]['SSH_ID']}",
+                "TCP_IP=${configMap[task.test][env.EXECUTOR_NUMBER]['TCP_IP']}"]){                         
+                //echo "SSH_ID is ${SSH_ID}"
+                // "TCP_IP is ${TCP_IP}"                
+                def results = [:]
+                testcases.each { test ->
+                    def settings = stageCases[test]
+                    try{
+                        // Run the different testing.
+                        stage("${test} testing"){
+                            switch (test) {
+                                case "FIO":
+                                    //sh script: "ssh ${SSH_ID}@${TCP_IP} 'cd /home/svt/fio_script; python3 fio.py fio_test.ini tcp://10.85.149.105 marvell'"
+                                    //sh script: "scp -r ${SSH_ID}@${TCP_IP}:/home/svt/fio_script/Logs/FIO/ root@10.18.134.101:/home/jenkins/workspace/Alamere_Test"
+                                    //sh script: "ssh ${SSH_ID}@${TCP_IP} 'rm -r /home/svt/fio_script/Logs/FIO'"
+                                    break
+                                case "marvo":
+                                    //sh script: "ssh ${SSH_ID}@${TCP_IP} 'cd /home/svt/marvo; xvfb-run -a python3 Marvo.py /home/svt/marvo /home/svt/marvo/PCIe tcp://10.85.149.105 marvell'"
+                                    //sh script: "scp -r ${SSH_ID}@${TCP_IP}:/home/svt/marvo/Logs/marvo root@10.18.134.101:/home/jenkins/workspace/Alamere_Test"
+                                    //sh script: "ssh ${SSH_ID}@${TCP_IP} 'rm -r /home/svt/marvo/Logs/marvo'"
+                                    break
+                            }
+                        }                    
+                        //Collect all test results as a map 
+                        Map currentTestResults = [
+                            (test): collectTestResults(                    
+                                test,
+                                settings.passedParser
+                                )
+                            ]
+                        results << currentTestResults    
+                        //echo "results is ${results}"
+                        writeFile(file: '${test}.xml', text: resultsAsJUnit(currentTestResults))
+                        //Generate the Junit Report 
+                        //archiveArtifacts(artifacts: '${test}.xml', excludes: null)
+                        step([
+                            $class: 'JUnitResultArchiver',
+                            testResults: '**/${test}.xml'
+                            ])                    
+                    } catch(e) {
+                            /* Error Handling
+                               When test is failed, upload the log onto Jenkins server.                            
+                            */
+                            echo "Testing failed due to $e"
+                            switch (test) {
+                                case "FIO":
+                                    sh script: "scp -r ${SSH_ID}@${TCP_IP}:/home/svt/fio_script/Logs/FIO/ root@10.18.134.101:/home/jenkins/workspace/Alamere_Test"
+                                    sh script: "ssh ${SSH_ID}@${TCP_IP} 'rm -r /home/svt/fio_script/Logs/FIO'"
+                                    break
+                                case "marvo":
+                                    sh script: "scp -r ${SSH_ID}@${TCP_IP}:/home/svt/marvo/Logs/marvo root@10.18.134.101:/home/jenkins/workspace/Alamere_Test"
+                                    sh script: "ssh ${SSH_ID}@${TCP_IP} 'rm -r /home/svt/marvo/Logs/marvo'"
+                                    break
+                            }
+                            sh script: "tar -zPcv -f ${test}.tar.gz ${test}/*.log"
+                            // Store the zips as a tar file
+                            archiveArtifacts artifacts: "${test}.tar.gz", allowEmptyArchive: true
+                            // Cleanup
+                            sh "rm -rf ${test}/ ${test}.tar.gz"                            
+                            currentBuild.description = """<br /><a style="text-decoration: none; background-color:red; color:white" href="${env.BUILD_URL}artifact/${buildLog}"><b>Test failed: ${test}</b></a>"""
+                        }finally {
+                            // If there is no error, upload the test result table.    
+                            //Publish the result table on the status overview.       
+                            currentBuild.description = "<br /></strong>${resultsAsTable(results)}"                               
+                        } 
                 }
-                currentBuild.description = currentBuild.description + "<br /></strong>${resultsAsTable(results)}"
-        
-        
-    }
-
-
-
-}
+            }           
+        }        
+    }      
 }
 
-
-
-// Helper functions
+/**
+ * Return the collected test result from every test case.
+ * @param test The test means the different stage.
+ * @param passedParser The function is used to check the selected file whether it includes required keyword. 
+ */
 def collectTestResults(String test, Closure passedParser) {
-    // Initialize empty result map
+    String copyPath = "$env.ARTIFACTS_COPY_PATH"    
+    
+    // Initialize empty result map.
     def resultMap = [:]
 
-    // Gather all the logfiles produced
-    String copyPath = WORKSPACE
+    // Gather all the logfiles produced.    
     def logFiles = sh (
-            script: "ls " + copyPath + "/testlogs/${test}/*summary.log",
+            script: "ls ${test}/summary.log",
             returnStdout:true
             ).readLines()
 
-    // Extract the test name and result from each logfile    
+    // Extract the test name and result from each logfile.    
     logFiles.each { logFile ->
         passedParser(logFile, resultMap)
     }
+
+    sh script: "tar -zPcv -f ${test}.tar.gz ${test}/*.log"
     // Store the zips as a tar file
     archiveArtifacts artifacts: "${test}.tar.gz", allowEmptyArchive: true
 
     // Cleanup
-    sh "rm -rf testlogs/${test} ${test}.tar.gz"
+    sh "rm -rf ${test}/ ${test}.tar.gz"
 
-    // Return the accumulated result
+    // Return the accumulated result.
     return resultMap
 }
 
-// Parser for regression test results
-def regressionPassedParser() {   
-    String  testName
-    boolean testPassed 
-    def resultMap = [:]
-    def logFiles = sh (
-            script: "ls /home/jenkins/workspace/Precommit_Test/summary.log",
-            returnStdout:true
-            ).readLines()
-    
-    logFiles.each{ logFile -> 
-        readFile(logFile).split("\n").each { line ->
-            //println line
-            //testName   = (logFile =~ /(\w*)\.log/)[0][1]
-            testName = line.subSequence(0,line.lastIndexOf(":"))   
-            //println testName
-            //currentTestSet = RegexSupport.lastMatcher[0][1]
-            //println currentTestSet 
-            testPassed = line.contains("PASS")
-            resultMap << [(testName): testPassed]
-            println resultMap
-        }
-    }
-    return resultMap  
-  
-}
+/**
+ * Return the collected test result is stored as a map from every test case. 
+ * Parser for test results.
+ * @param logFile The logFile means the different stage.
+ * @param resultMap The resultMap is a map, recording the required file exists. 
+ */
 
-// Parser for regression test results
 def jsonTypePassedParser(logFile, resultMap) {   
     String  testName
     boolean testPassed 
     readFile(logFile).split("\n").each { line ->
         testName = line.subSequence(0,line.lastIndexOf(":"))   
-        testPassed = line.contains("PASS")
+        testPassed = line.contains("Pass")
         resultMap << [(testName): testPassed]
         println resultMap
     }    
     return resultMap  
 }
-
-def logParser(logFile) {
-  // Initialize empty result map
-  def logMap = [:]
-  String  testName = (logFile =~ /(\w*)\.log/)[0][1]
-  logMap << [(testName): logFile]
-  return logMap
-}
-
+/**
+ * Return the generated table based on different testcases and transferred to html format.
+ * @param testResults The testResults means the result is stored as a map and aims to display on the jenkins. 
+ */
+ 
 @NonCPS
 String resultsAsTable(def testResults) {
-  StringWriter  stringWriter  = new StringWriter()
-  MarkupBuilder markupBuilder = new MarkupBuilder(stringWriter)
+    StringWriter  stringWriter  = new StringWriter()
+    MarkupBuilder markupBuilder = new MarkupBuilder(stringWriter)
 
-  // All those delegate calls here are messing up the elegancy of the MarkupBuilder
-  // but are needed due to https://issues.jenkins-ci.org/browse/JENKINS-32766
-  markupBuilder.html {
-    delegate.body {
-      delegate.style(".passed { color: #468847; background-color: #dff0d8; border-color: #d6e9c6; } .failed { color: #b94a48; background-color: #f2dede; border-color: #eed3d7; }", type: 'text/css')
-      delegate.table {
-        testResults.each { test, testResult ->
-            delegate.delegate.tr {
+    // All those delegate calls here are messing up the elegancy of the MarkupBuilder
+    // but are needed due to https://issues.jenkins-ci.org/browse/JENKINS-32766
+    markupBuilder.html {
+        delegate.body {
+            delegate.style(".passed { color: #468847; background-color: #dff0d8; border-color: #d6e9c6; } .failed { color: #b94a48; background-color: #f2dede; border-color: #eed3d7; }", type: 'text/css')
+            delegate.table {
+                testResults.each { test, testResult ->
+                    delegate.delegate.tr {
                         delegate.td {
-                            delegate.strong("[Stage] $test ")
-                            //delegate.strong("$test")
-                            delegate.a("$test Logs", href: "${env.BUILD_URL}/artifact/" + "${test}.tar.gz")
+                            delegate.strong("[Stage] ${test} ")
+                            delegate.a("${test} Logs", href: "${env.BUILD_URL}/artifact/" + "${test}.tar.gz")
                         }
                     }
-            testResult.each { testName, testPassed ->
-            delegate.delegate.delegate.tr {
-              delegate.td("$testName", class: testPassed ? 'passed' : 'failed')
+                    testResult.each { testName, testPassed ->
+                        delegate.delegate.delegate.tr {
+                            delegate.td("$testName", class: testPassed ? 'passed' : 'failed')
+                        }
+                    }
+                }
             }
-          }
         }
-      }
     }
-  }
-
-  return stringWriter.toString()
+    return stringWriter.toString()
 }
 
-
+/**
+ * Return the generated xml format report based on different testcases.
+ * @param testResults The testResults means the result is stored as a map and aims to display on the jenkins. 
+ */
 
 @NonCPS
 String resultsAsJUnit(def testResults) {
@@ -302,4 +251,3 @@ String resultsAsJUnit(def testResults) {
     }  
   return stringWriter.toString()
 }
-
