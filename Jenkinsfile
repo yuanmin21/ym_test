@@ -8,7 +8,7 @@ import groovy.transform.Field
 import javax.ws.rs.core.UriBuilder
 import groovy.xml.*
 import static java.util.UUID.randomUUID
-///////------
+
 def slave1Config = [
     "0" : ['SSH_ID': env.SOC1_0_SSH_ID,'APC_IP': env.SOC1_0_APC_IP,  'APC_SLOT': env.SOC1_0_APC_SLOT,'TARGET_IP': env.SOC1_0_TARGET_IP,'TCP_IP':env.SOC1_0_TCP_IP],
     "1" : ['SSH_ID': env.SOC1_1_SSH_ID,'APC_IP': env.SOC1_1_APC_IP,  'APC_SLOT': env.SOC1_1_APC_SLOT,'TARGET_IP': env.SOC1_1_TARGET_IP,'TCP_IP':env.SOC1_1_TCP_IP]
@@ -78,15 +78,27 @@ timestamps {
                         // Run the different testing.
                         stage("${test} testing"){
                             switch (test) {
+                                case "Flash_fw":
+                                    sh script: "ssh ${SSH_ID}@${TCP_IP} 'cd /home/svt/fio_script; python3 fio.py fio_test.ini tcp://10.85.149.105 marvell'"
+                                    sh script: "scp -r ${SSH_ID}@${TCP_IP}:/home/svt/fio_script/Logs/FIO/ root@10.18.134.101:/home/jenkins/workspace/Alamere_Test"
+                                    sh script: "ssh ${SSH_ID}@${TCP_IP} 'rm -r /home/svt/fio_script/Logs/FIO'"
+                                    break
+
                                 case "FIO":
-                                    //sh script: "ssh ${SSH_ID}@${TCP_IP} 'cd /home/svt/fio_script; python3 fio.py fio_test.ini tcp://10.85.149.105 marvell'"
-                                    //sh script: "scp -r ${SSH_ID}@${TCP_IP}:/home/svt/fio_script/Logs/FIO/ root@10.18.134.101:/home/jenkins/workspace/Alamere_Test"
-                                    //sh script: "ssh ${SSH_ID}@${TCP_IP} 'rm -r /home/svt/fio_script/Logs/FIO'"
+                                    sh script: "ssh ${SSH_ID}@${TCP_IP} 'cd /home/svt/fio_script; python3 fio.py fio_test.ini tcp://10.85.149.105 marvell'"
+                                    sh script: "scp -r ${SSH_ID}@${TCP_IP}:/home/svt/fio_script/Logs/FIO/ root@10.18.134.101:/home/jenkins/workspace/Alamere_Test"
+                                    sh script: "ssh ${SSH_ID}@${TCP_IP} 'rm -r /home/svt/fio_script/Logs/FIO'"
                                     break
                                 case "marvo":
-                                    //sh script: "ssh ${SSH_ID}@${TCP_IP} 'cd /home/svt/marvo; xvfb-run -a python3 Marvo.py /home/svt/marvo /home/svt/marvo/PCIe tcp://10.85.149.105 marvell'"
-                                    //sh script: "scp -r ${SSH_ID}@${TCP_IP}:/home/svt/marvo/Logs/marvo root@10.18.134.101:/home/jenkins/workspace/Alamere_Test"
-                                    //sh script: "ssh ${SSH_ID}@${TCP_IP} 'rm -r /home/svt/marvo/Logs/marvo'"
+                                    sh script: "ssh ${SSH_ID}@${TCP_IP} 'cd /home/svt/marvo; xvfb-run -a python3 Marvo.py /home/svt/marvo /home/svt/marvo/PCIe tcp://10.85.149.105 marvell'"
+                                    sh script: "scp -r ${SSH_ID}@${TCP_IP}:/home/svt/marvo/Logs/marvo root@10.18.134.101:/home/jenkins/workspace/Alamere_Test"
+                                    sh script: "ssh ${SSH_ID}@${TCP_IP} 'rm -r /home/svt/marvo/Logs/marvo'"
+                                    break
+                                case "IOL":
+                                    sh script: "ssh ${SSH_ID}@${TCP_IP} 'cd /home/svt/fio_script; python3 fio.py fio_test.ini tcp://10.85.149.105 marvell'"
+                                    sh script: "scp -r ${SSH_ID}@${TCP_IP}:/home/svt/fio_script/Logs/FIO/ root@10.18.134.101:/home/jenkins/workspace/Alamere_Test"
+                                    sh script: "ssh ${SSH_ID}@${TCP_IP} 'rm -r /home/svt/fio_script/Logs/FIO'"
+
                                     break
                             }
                         }                    
