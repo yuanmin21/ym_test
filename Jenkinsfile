@@ -51,12 +51,12 @@ def toDo = [
 def stageCases = [
     // Precommit
     "Flash_fw": [passedParser: this.&jsonTypePassedParser], 
-    "FIO": [passedParser: this.&jsonTypePassedParser], 
-    "marvo": [passedParser: this.&jsonTypePassedParser],
-    "IOL": [passedParser: this.&jsonTypePassedParser]
+    //"FIO": [passedParser: this.&jsonTypePassedParser], 
+    //"marvo": [passedParser: this.&jsonTypePassedParser],
+    //"IOL": [passedParser: this.&jsonTypePassedParser]
 ]
-def testcases = ["Flash_fw","FIO", "marvo","IOL"]
-
+//def testcases = ["Flash_fw","FIO", "marvo","IOL"]
+def testcases = ["Flash_fw"]
 timestamps {
     stage("Build") {
         echo "After Build"
@@ -69,8 +69,9 @@ timestamps {
             withEnv( //add variable into environment
                 ["SSH_ID=${configMap[task.test][env.EXECUTOR_NUMBER]['SSH_ID']}",
                 "TCP_IP=${configMap[task.test][env.EXECUTOR_NUMBER]['TCP_IP']}"]){                         
-                //echo "SSH_ID is ${SSH_ID}"
-                // "TCP_IP is ${TCP_IP}"                
+                echo "SSH_ID is ${SSH_ID}"
+                echo "TCP_IP is ${TCP_IP}"  
+                echo "workspace is ${WORKSPACE}"               
                 def results = [:]
                 testcases.each { test ->
                     def settings = stageCases[test]
@@ -79,27 +80,48 @@ timestamps {
                         stage("${test} testing"){
                             switch (test) {
                                 case "Flash_fw":
+     
+  
+                                   //sudo  python3  online_flash_fw.py -f 1098R20_Internal_E2e_Bics2_Nvme.dfw -d "tcp://10.85.149.108:5555" -p marvell
+
+
+
+                                        timeout(time: 5, unit: 'MINUTES') {
+                                            sh script: "ssh ${SSH_ID} 'cd /home/workspace/script; python3 online_flash_fw.py -f 1098R20_Internal_E2e_Bics2_Nvme.dfw -d tcp://${TCP_IP} -p marvell'"
+                                        }
+                                        sh script: "scp -r ${SSH_ID}:/home/workspace/script ${WORKSPACE}"
+                                        sh script: "ssh ${SSH_ID} 'rm -rf /home/workspace/script/Flash_fw'"
+                                        break
+
+                                case "FIO":
+                                    SSH_ID1
                                     sh script: "ssh ${SSH_ID}@${TCP_IP} 'cd /home/svt/fio_script; python3 fio.py fio_test.ini tcp://10.85.149.105 marvell'"
                                     sh script: "scp -r ${SSH_ID}@${TCP_IP}:/home/svt/fio_script/Logs/FIO/ root@10.18.134.101:/home/jenkins/workspace/Alamere_Test"
                                     sh script: "ssh ${SSH_ID}@${TCP_IP} 'rm -r /home/svt/fio_script/Logs/FIO'"
                                     break
 
-                                case "FIO":
+                                case "IOL":
+                                    SSH_ID2
+                                    
+
                                     sh script: "ssh ${SSH_ID}@${TCP_IP} 'cd /home/svt/fio_script; python3 fio.py fio_test.ini tcp://10.85.149.105 marvell'"
                                     sh script: "scp -r ${SSH_ID}@${TCP_IP}:/home/svt/fio_script/Logs/FIO/ root@10.18.134.101:/home/jenkins/workspace/Alamere_Test"
                                     sh script: "ssh ${SSH_ID}@${TCP_IP} 'rm -r /home/svt/fio_script/Logs/FIO'"
+
                                     break
+
                                 case "marvo":
+                                
+                                parallel
+                                ID 1   ( ) 
+                                ID2     ()
+                                ID 3  
                                     sh script: "ssh ${SSH_ID}@${TCP_IP} 'cd /home/svt/marvo; xvfb-run -a python3 Marvo.py /home/svt/marvo /home/svt/marvo/PCIe tcp://10.85.149.105 marvell'"
                                     sh script: "scp -r ${SSH_ID}@${TCP_IP}:/home/svt/marvo/Logs/marvo root@10.18.134.101:/home/jenkins/workspace/Alamere_Test"
                                     sh script: "ssh ${SSH_ID}@${TCP_IP} 'rm -r /home/svt/marvo/Logs/marvo'"
                                     break
-                                case "IOL":
-                                    sh script: "ssh ${SSH_ID}@${TCP_IP} 'cd /home/svt/fio_script; python3 fio.py fio_test.ini tcp://10.85.149.105 marvell'"
-                                    sh script: "scp -r ${SSH_ID}@${TCP_IP}:/home/svt/fio_script/Logs/FIO/ root@10.18.134.101:/home/jenkins/workspace/Alamere_Test"
-                                    sh script: "ssh ${SSH_ID}@${TCP_IP} 'rm -r /home/svt/fio_script/Logs/FIO'"
 
-                                    break
+                               
                             }
                         }                    
                         //Collect all test results as a map 
