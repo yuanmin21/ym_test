@@ -37,15 +37,15 @@ def toDo = [
 
 
     //ZaoR20
-    [ name: 'fio', soc: '1098R20',      customer: 'Internal',     target: 'E2e_Bics2_Nvme_4MediaSpaces',  configId: '0',   build: 'windows-build' ],
+    [ name: '1098R20_Internal_E2e_Bics2_Nvme_4MediaSpaces', soc: '1098R20',      customer: 'Internal',     target: 'E2e_Bics2_Nvme_4MediaSpaces',  configId: '0',   build: 'windows-build' ],
     [ name: '1098R20_Internal_E2e_Bics2_Nvme_Historylog',   soc: '1098R20',      customer: 'Internal',     target: 'E2e_Bics2_Nvme_Historylog',    configId: '0',   build: 'windows-build' ],
     [ name: '1098R20_Internal_E2e_Bics2_Sata',              soc: '1098R20',      customer: 'Internal',     target: 'E2e_Bics2_Sata',               configId: '0',   build: 'windows-build' ],
     [ name: '1098R20_Internal_E2e_Bics3_Nvme',              soc: '1098R20',      customer: 'Internal',     target: 'E2e_Bics3_Nvme',               configId: '0',   build: 'windows-build' ],
     [ name: '1098R20_Internal_Bics2_Nvme_Mst_Lite',         soc: '1098R20',      customer: 'Internal',     target: 'Bics2_Nvme_Mst_Lite',          configId: '0',   build: 'windows-build' ],
     [ name: '1098R20_Internal_E2e_Bics2_Nvme_Mst',          soc: '1098R20',      customer: 'Internal',     target: 'E2e_Bics2_Nvme_Mst',           configId: '0',   build: 'windows-build' ],
     [ name: '1098R20_Standard_Ramdrive0',                   soc: '1098R20',      customer: 'Standard',     target: 'Ramdrive0',                    configId: '0',   build: 'windows-build' ],*/
-    [ name: 'Alamere_Jenkins_01 ',                   soc: '1098R20',      customer: 'Standard',     target: 'E2e_Bics2',                    configId: '0',   build: 'windows-build', test: env.SOC1_1_SSH_ID ],
-    [ name: 'Alamere_Jenkins_02',              soc: '1098R20',      customer: 'Internal',     target: 'E2e_Bics2_Nvme',               configId: '1',   build: 'windows-build', test: env.SOC1_0_SSH_ID ],
+    [ name: '1098R20_Standard_E2e_Bics2_SC',                   soc: '1098R20',      customer: 'Standard',     target: 'E2e_Bics2',                    configId: '0',   build: 'windows-build', test: env.SOC2_SLAVENAME ],
+    [ name: '1098R20_Internal_E2e_Bics2_TP',              soc: '1098R20',      customer: 'Internal',     target: 'E2e_Bics2_Nvme',               configId: '1',   build: 'windows-build', test: env.SOC2_SLAVENAME ],
 ]
 
 def stageCases = [
@@ -108,7 +108,7 @@ toDo.each { task ->
                                     sh script: "ssh ${SSH_ID} 'rm -r /home/svt/marvo/Logs/marvo'"
                                     break
                             }
-                        }                    
+                        //}                    
                         // Collect all test results as a map 
                         Map currentTestResults = [
                             (test): collectTestResults(                    
