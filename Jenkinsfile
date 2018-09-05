@@ -62,7 +62,8 @@ def testTasks = [:]
 
 toDo.each { task ->
     testTasks["$task.name"] = {
-        node("slave1") {           
+        node("slave1") {     
+            git([url: 'https://github.com/yuanmin21/ym_test.git', branch: 'master'])
             withEnv( //add variable into environment
                 ["SSH_ID=${configMap[task.test][task.configId]['SSH_ID']}",
                 "TCP_IP=${configMap[task.test][task.configId]['TCP_IP']}"]){                         
@@ -165,6 +166,7 @@ toDo.each { task ->
 timestamps {
     stage("Build") {
         echo "After Build"
+        
         //currentBuild.description = "Fake Build Stage"        
     }
     stage("Test") {
