@@ -37,15 +37,15 @@ def toDo = [
 
 
     //ZaoR20
-    [ name: '1098R20_Internal_E2e_Bics2_Nvme_4MediaSpaces', soc: '1098R20',      customer: 'Internal',     target: 'E2e_Bics2_Nvme_4MediaSpaces',  configId: '0',   build: 'windows-build' ],
+    [ name: 'fio', soc: '1098R20',      customer: 'Internal',     target: 'E2e_Bics2_Nvme_4MediaSpaces',  configId: '0',   build: 'windows-build' ],
     [ name: '1098R20_Internal_E2e_Bics2_Nvme_Historylog',   soc: '1098R20',      customer: 'Internal',     target: 'E2e_Bics2_Nvme_Historylog',    configId: '0',   build: 'windows-build' ],
     [ name: '1098R20_Internal_E2e_Bics2_Sata',              soc: '1098R20',      customer: 'Internal',     target: 'E2e_Bics2_Sata',               configId: '0',   build: 'windows-build' ],
     [ name: '1098R20_Internal_E2e_Bics3_Nvme',              soc: '1098R20',      customer: 'Internal',     target: 'E2e_Bics3_Nvme',               configId: '0',   build: 'windows-build' ],
     [ name: '1098R20_Internal_Bics2_Nvme_Mst_Lite',         soc: '1098R20',      customer: 'Internal',     target: 'Bics2_Nvme_Mst_Lite',          configId: '0',   build: 'windows-build' ],
     [ name: '1098R20_Internal_E2e_Bics2_Nvme_Mst',          soc: '1098R20',      customer: 'Internal',     target: 'E2e_Bics2_Nvme_Mst',           configId: '0',   build: 'windows-build' ],
     [ name: '1098R20_Standard_Ramdrive0',                   soc: '1098R20',      customer: 'Standard',     target: 'Ramdrive0',                    configId: '0',   build: 'windows-build' ],*/
-    [ name: '1098R20_Standard_E2e_Bics2',                   soc: '1098R20',      customer: 'Standard',     target: 'E2e_Bics2',                    configId: '0',   build: 'windows-build', test: env.SOC2_SLAVENAME ],
-
+    [ name: 'Alamere_Jenkins_01 ',                   soc: '1098R20',      customer: 'Standard',     target: 'E2e_Bics2',                    configId: '0',   build: 'windows-build', test: env.SOC1_1_SSH_ID ],
+    [ name: 'Alamere_Jenkins_02',              soc: '1098R20',      customer: 'Internal',     target: 'E2e_Bics2_Nvme',               configId: '1',   build: 'windows-build', test: env.SOC1_0_SSH_ID ],
 ]
 
 def stageCases = [
@@ -53,40 +53,29 @@ def stageCases = [
     "Flash_fw": [passedParser: this.&jsonTypePassedParser], 
     //"FIO": [passedParser: this.&jsonTypePassedParser], 
     //"marvo": [passedParser: this.&jsonTypePassedParser],
-    //"IOL": [passedParser: this.&jsonTypePassedParser]
+    "IOL": [passedParser: this.&jsonTypePassedParser]
 ]
-//def testcases = ["Flash_fw","FIO", "marvo","IOL"]
-def testcases = ["Flash_fw"]
-timestamps {
-    stage("Build") {
-        echo "After Build"
-        currentBuild.description = "Fake Build Stage"        
-    }
+def testcases = ["Flash_fw","IOL"]
+//def testcases = ["Flash_fw"]
     
-    def Tasks = [:]
-    node("slave1") {
-        toDo.each { task ->           
+def testTasks = [:]
+
+toDo.each { task ->
+    testTasks["$task.name"] = {
+        node("ocean_linuxnode") {           
             withEnv( //add variable into environment
-                ["SSH_ID=${configMap[task.test][env.EXECUTOR_NUMBER]['SSH_ID']}",
-                "TCP_IP=${configMap[task.test][env.EXECUTOR_NUMBER]['TCP_IP']}"]){                         
+                ["SSH_ID=${configMap[task.test][task.configId]['SSH_ID']}",
+                "TCP_IP=${configMap[task.test][task.configId]['TCP_IP']}"]){                         
                 echo "SSH_ID is ${SSH_ID}"
-                echo "TCP_IP is ${TCP_IP}"  
-               
-                echo "workspace is ${WORKSPACE}"               
+                echo "TCP_IP is ${TCP_IP}"              
                 def results = [:]
                 testcases.each { test ->
                     def settings = stageCases[test]
                     try{
                         // Run the different testing.
-                        stage("${test} testing"){
+                        //stage("$task.name ${test} testing"){
                             switch (test) {
                                 case "Flash_fw":
-     
-  
-                                   //sudo  python3  online_flash_fw.py -f 1098R20_Internal_E2e_Bics2_Nvme.dfw -d "tcp://10.85.149.108:5555" -p marvell
-
-
-
                                         timeout(time: 5, unit: 'MINUTES') {
                                             sh script: "ssh ${SSH_ID} 'cd /home/workspace/script; sudo python3 online_flash_fw.py -f 1098R20_Internal_E2e_Bics2_Nvme.dfw -d tcp://${TCP_IP} -p marvell'"
                                         }
@@ -105,41 +94,37 @@ timestamps {
                                     SSH_ID2
                                     
 
-                                    sh script: "ssh ${SSH_ID}@${TCP_IP} 'cd /home/svt/fio_script; python3 fio.py fio_test.ini tcp://10.85.149.105 marvell'"
+                                    sh script: "ssh ${SSH_ID}@${TCP_IP} 'cd /home/svt/fio_script; sudo  python3 IOL_test.py /home/svt/iol_interact-9.0b/nvme/manage/ testcases -d tcp://${TCP_IP} -p marvell'"
                                     sh script: "scp -r ${SSH_ID}@${TCP_IP}:/home/svt/fio_script/Logs/FIO/ root@10.18.134.101:/home/jenkins/workspace/Alamere_Test"
                                     sh script: "ssh ${SSH_ID}@${TCP_IP} 'rm -r /home/svt/fio_script/Logs/FIO'"
 
                                     break
-
-                                case "marvo":
                                 
-                                parallel
-                                ID 1   ( ) 
-                                ID2     ()
-                                ID 3  
-                                    sh script: "ssh ${SSH_ID}@${TCP_IP} 'cd /home/svt/marvo; xvfb-run -a python3 Marvo.py /home/svt/marvo /home/svt/marvo/PCIe tcp://10.85.149.105 marvell'"
-                                    sh script: "scp -r ${SSH_ID}@${TCP_IP}:/home/svt/marvo/Logs/marvo root@10.18.134.101:/home/jenkins/workspace/Alamere_Test"
-                                    sh script: "ssh ${SSH_ID}@${TCP_IP} 'rm -r /home/svt/marvo/Logs/marvo'"
+                                case "marvo":
+                                    timeout(time: 3, unit: 'HOURS') {
+                                        sh script: "ssh ${SSH_ID} 'cd /home/svt/marvo; xvfb-run -a python3 Marvo.py /home/svt/marvo /home/svt/marvo/PCIe tcp://${TCP_IP} marvell'"
+                                    }
+                                    sh script: "scp -r ${SSH_ID}:/home/svt/marvo/Logs/marvo ${WORKSPACE}"
+                                    sh script: "ssh ${SSH_ID} 'rm -r /home/svt/marvo/Logs/marvo'"
                                     break
-
-                               
                             }
                         }                    
-                        //Collect all test results as a map 
+                        // Collect all test results as a map 
                         Map currentTestResults = [
                             (test): collectTestResults(                    
                                 test,
-                                settings.passedParser
+                                settings.passedParser,
+                                task.name,
                                 )
                             ]
                         results << currentTestResults    
                         //echo "results is ${results}"
-                        writeFile(file: '${test}.xml', text: resultsAsJUnit(currentTestResults))
-                        //Generate the Junit Report 
+                        writeFile(file: 'test.xml', text: resultsAsJUnit(currentTestResults))
+                        // Generate the Junit Report 
                         //archiveArtifacts(artifacts: '${test}.xml', excludes: null)
                         step([
                             $class: 'JUnitResultArchiver',
-                            testResults: '**/${test}.xml'
+                            testResults: '**/test.xml'
                             ])                    
                     } catch(e) {
                             /* Error Handling
@@ -148,12 +133,12 @@ timestamps {
                             echo "Testing failed due to $e"
                             switch (test) {
                                 case "FIO":
-                                    sh script: "scp -r ${SSH_ID}@${TCP_IP}:/home/svt/fio_script/Logs/FIO/ root@10.18.134.101:/home/jenkins/workspace/Alamere_Test"
-                                    sh script: "ssh ${SSH_ID}@${TCP_IP} 'rm -r /home/svt/fio_script/Logs/FIO'"
+                                    sh script: "scp -r ${SSH_ID}:/home/svt/fio_script/Logs/FIO/ ${WORKSPACE}"
+                                    sh script: "ssh ${SSH_ID} 'rm -r /home/svt/fio_script/Logs/FIO'"
                                     break
                                 case "marvo":
-                                    sh script: "scp -r ${SSH_ID}@${TCP_IP}:/home/svt/marvo/Logs/marvo root@10.18.134.101:/home/jenkins/workspace/Alamere_Test"
-                                    sh script: "ssh ${SSH_ID}@${TCP_IP} 'rm -r /home/svt/marvo/Logs/marvo'"
+                                    sh script: "scp -r ${SSH_ID}:/home/svt/marvo/Logs/marvo ${WORKSPACE}"
+                                    sh script: "ssh ${SSH_ID} 'rm -r /home/svt/marvo/Logs/marvo'"
                                     break
                             }
                             sh script: "tar -zPcv -f ${test}.tar.gz ${test}/*.log"
@@ -164,13 +149,23 @@ timestamps {
                             currentBuild.description = """<br /><a style="text-decoration: none; background-color:red; color:white" href="${env.BUILD_URL}artifact/${buildLog}"><b>Test failed: ${test}</b></a>"""
                         }finally {
                             // If there is no error, upload the test result table.    
-                            //Publish the result table on the status overview.       
+                            // Publish the result table on the status overview.       
                             currentBuild.description = "<br /></strong>${resultsAsTable(results)}"                               
                         } 
                 }
-            }           
-        }        
-    }      
+            }                 
+        }
+    }
+}        
+          
+timestamps {
+    stage("Build") {
+        echo "After Build"
+        //currentBuild.description = "Fake Build Stage"        
+    }
+    stage("Test") {
+        parallel testTasks
+    }
 }
 
 /**
@@ -178,7 +173,7 @@ timestamps {
  * @param test The test means the different stage.
  * @param passedParser The function is used to check the selected file whether it includes required keyword. 
  */
-def collectTestResults(String test, Closure passedParser) {
+def collectTestResults(String test, Closure passedParser, String Testname) {
     String copyPath = "$env.ARTIFACTS_COPY_PATH"    
     
     // Initialize empty result map.
@@ -195,12 +190,12 @@ def collectTestResults(String test, Closure passedParser) {
         passedParser(logFile, resultMap)
     }
 
-    sh script: "tar -zPcv -f ${test}.tar.gz ${test}/*.log"
+    sh script: "tar -zPcv -f ${test}_${Testname}.tar.gz ${test}/*.log"
     // Store the zips as a tar file
-    archiveArtifacts artifacts: "${test}.tar.gz", allowEmptyArchive: true
+    archiveArtifacts artifacts: "${test}_${Testname}.tar.gz", allowEmptyArchive: true
 
     // Cleanup
-    sh "rm -rf ${test}/ ${test}.tar.gz"
+    sh "rm -rf ${test}/ ${test}_${Testname}.tar.gz"
 
     // Return the accumulated result.
     return resultMap
