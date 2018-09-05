@@ -296,6 +296,7 @@ def rebootTest(retryCount){
   def uartFound = -1
   def retry = retryCount
   while((errorCode != 0  && uartFound == -1) && retry > 0){
+    echo "-------------reboot-------"
     sh script:"ssh $SSH_ID 'sudo shutdown now'",returnStatus:true
     sh 'python3 $WORKSPACE/rebootTarget.py $APC_IP $APC_SLOT $TARGET_IP $SSH_ID'
     errorCode = sh script:'ssh $SSH_ID sudo modprobe nvme; ssh $SSH_ID ls /dev/nv*',returnStatus:true
