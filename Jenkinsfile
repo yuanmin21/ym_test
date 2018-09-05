@@ -71,6 +71,7 @@ timestamps {
                 "TCP_IP=${configMap[task.test][env.EXECUTOR_NUMBER]['TCP_IP']}"]){                         
                 echo "SSH_ID is ${SSH_ID}"
                 echo "TCP_IP is ${TCP_IP}"  
+               
                 echo "workspace is ${WORKSPACE}"               
                 def results = [:]
                 testcases.each { test ->
@@ -87,7 +88,7 @@ timestamps {
 
 
                                         timeout(time: 5, unit: 'MINUTES') {
-                                            sh script: "ssh ${SSH_ID} 'cd /home/workspace/script; python3 online_flash_fw.py -f 1098R20_Internal_E2e_Bics2_Nvme.dfw -d tcp://${TCP_IP} -p marvell'"
+                                            sh script: "ssh ${SSH_ID} 'cd /home/workspace/script; sudo python3 online_flash_fw.py -f 1098R20_Internal_E2e_Bics2_Nvme.dfw -d tcp://${TCP_IP} -p marvell'"
                                         }
                                         sh script: "scp -r ${SSH_ID}:/home/workspace/script ${WORKSPACE}"
                                         sh script: "ssh ${SSH_ID} 'rm -rf /home/workspace/script/Flash_fw'"
