@@ -62,7 +62,7 @@ def testTasks = [:]
 
 toDo.each { task ->
     testTasks["$task.name"] = {
-        node("ocean_linuxnode") {           
+        node("slave1") {           
             withEnv( //add variable into environment
                 ["SSH_ID=${configMap[task.test][task.configId]['SSH_ID']}",
                 "TCP_IP=${configMap[task.test][task.configId]['TCP_IP']}"]){                         
@@ -119,7 +119,7 @@ toDo.each { task ->
                             ]
                         results << currentTestResults    
                         //echo "results is ${results}"
-                        writeFile(file: 'test.xml', text: resultsAsJUnit(currentTestResults))
+                        writeFile(file: 'test.xml', text: resultsAsJUnit(currentTestResults, task.name))
                         // Generate the Junit Report 
                         //archiveArtifacts(artifacts: '${test}.xml', excludes: null)
                         step([
@@ -150,7 +150,8 @@ toDo.each { task ->
                         }finally {
                             // If there is no error, upload the test result table.    
                             // Publish the result table on the status overview.       
-                            currentBuild.description = "<br /></strong>${resultsAsTable(results)}"                               
+                            currentBuild.description = currentBuild.description + "<br /></strong>${resultsAsTable(results, task.name)}"                               
+                            echo "tag"
                         } 
                 }
             }                 
@@ -225,7 +226,7 @@ def jsonTypePassedParser(logFile, resultMap) {
  */
  
 @NonCPS
-String resultsAsTable(def testResults) {
+String resultsAsTable(def testResults, String TestName) {
     StringWriter  stringWriter  = new StringWriter()
     MarkupBuilder markupBuilder = new MarkupBuilder(stringWriter)
 
@@ -238,13 +239,14 @@ String resultsAsTable(def testResults) {
                 testResults.each { test, testResult ->
                     delegate.delegate.tr {
                         delegate.td {
-                            delegate.strong("[Stage] ${test} ")
-                            delegate.a("${test} Logs", href: "${env.BUILD_URL}/artifact/" + "${test}.tar.gz")
+                            echo "test name is ${TestName}"
+                            delegate.strong("[Stage] ${test}")
+                            delegate.a("Logs", href: "${env.BUILD_URL}/artifact/" + "${test}_${TestName}.tar.gz")
                         }
                     }
                     testResult.each { testName, testPassed ->
                         delegate.delegate.delegate.tr {
-                            delegate.td("$testName", class: testPassed ? 'passed' : 'failed')
+                            delegate.td("$testName ${TestName}", class: testPassed ? 'passed' : 'failed')
                         }
                     }
                 }
@@ -260,13 +262,14 @@ String resultsAsTable(def testResults) {
  */
 
 @NonCPS
-String resultsAsJUnit(def testResults) {
+String resultsAsJUnit(def testResults, String TestName) {
     StringWriter  stringWriter  = new StringWriter()
     MarkupBuilder markupBuilder = new MarkupBuilder(stringWriter)
     // All those delegate calls here are messing up the elegancy of the MarkupBuilder
     // but are needed due to https://issues.jenkins-ci.org/browse/JENKINS-32766
     markupBuilder.testsuites {
         testResults.each{ test, testresult ->
+            echo "test name is ${TestName}"
             delegate.delegate.testsuite(name: testresult.testName, tests: testresult.size(), failures: testresult.values().count(false)) {
                 testresult.each{ testName, testPassed ->
                     delegate.delegate.testcase(name: testName) {
