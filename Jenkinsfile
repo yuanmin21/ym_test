@@ -91,7 +91,7 @@ timestamps {
                                             sh script: "ssh ${SSH_ID} 'cd /home/workspace/script; sudo python3 online_flash_fw.py -f 1098R20_Internal_E2e_Bics2_Nvme.dfw -d tcp://${TCP_IP} -p marvell'"
                                         }
                                         sh script: "scp -r ${SSH_ID}:/home/workspace/Flash_fw ${WORKSPACE}"
-                                        sh script: "ssh ${SSH_ID} 'rm -rf /home/workspace/Flash_fw'"
+                                        sh script: "ssh ${SSH_ID} 'sudo rm -Rf /home/workspace/Flash_fw'"
                                         break
 
                                 case "FIO":
