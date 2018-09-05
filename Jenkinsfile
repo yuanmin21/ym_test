@@ -81,8 +81,11 @@ toDo.each { task ->
                                         }
                                         sh script: "scp -r ${SSH_ID}:/home/workspace/Flash_fw ${WORKSPACE}"
                                         sh script: "ssh ${SSH_ID} 'sudo rm -Rf /home/workspace/Flash_fw'"
+                                        sh script: "ssh ${SSH_ID} 'sudo reboot'"
+                                        rebootTest(5)
                                         break
 
+                                
                                 case "FIO":
                                     SSH_ID1
                                     sh script: "ssh ${SSH_ID}@${TCP_IP} 'cd /home/svt/fio_script; python3 fio.py fio_test.ini tcp://10.85.149.105 marvell'"
@@ -283,4 +286,23 @@ String resultsAsJUnit(def testResults, String TestName) {
         }
     }  
   return stringWriter.toString()
+}
+
+
+def rebootTest(retryCount){
+  def errorCode = -1
+  def uartFound = -1
+  def retry = retryCount
+  while((errorCode != 0  && uartFound == -1) && retry > 0){
+    sh script:"ssh $SSH_ID 'sudo shutdown now'",returnStatus:true
+    sh 'python3 $WORKSPACE/rebootTarget.py $APC_IP $APC_SLOT $TARGET_IP $SSH_ID'
+    errorCode = sh script:'ssh $SSH_ID sudo modprobe nvme; ssh $SSH_ID ls /dev/nv*',returnStatus:true
+    cmdString = sh script:'ssh pi@$TCP_IP lsusb', returnStdout:true
+    uartFound = cmdString.indexOf("UART")
+    retry = retry - 1
+  }
+  if(retry <= 0){
+    currentBuild.result = "FAILED"
+    error("Could not detect nvme device or uart device")
+  }
 }
