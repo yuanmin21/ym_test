@@ -258,7 +258,7 @@ String resultsAsTable(def testResults, String testCase) {
                             delegate.td {
                                 delegate.strong("[Stage] ${test}")
                                 delegate.a("Logs", href: "${env.BUILD_URL}/artifact/${testCase}_${test}.tar.gz")
-                                echo "testname is ${testCase}_${test}"
+                                
                             }
                         }
                         testResult.each { testName, testPassed ->
