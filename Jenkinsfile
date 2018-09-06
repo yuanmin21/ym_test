@@ -44,37 +44,37 @@ def toDo = [
     [ name: '1098R20_Internal_Bics2_Nvme_Mst_Lite',         soc: '1098R20',      customer: 'Internal',     target: 'Bics2_Nvme_Mst_Lite',          configId: '0',   build: 'windows-build' ],
     [ name: '1098R20_Internal_E2e_Bics2_Nvme_Mst',          soc: '1098R20',      customer: 'Internal',     target: 'E2e_Bics2_Nvme_Mst',           configId: '0',   build: 'windows-build' ],
     [ name: '1098R20_Standard_Ramdrive0',                   soc: '1098R20',      customer: 'Standard',     target: 'Ramdrive0',                    configId: '0',   build: 'windows-build' ],*/
-    [ name: 'Alamere_Jenkins_01',                   soc: '1098R20',      customer: 'Standard',     target: 'E2e_Bics2',                    configId: '0',   build: 'windows-build', test: env.SOC2_SLAVENAME ],
-    [ name: 'Alamere_Jenkins_02',              soc: '1098R20',      customer: 'Internal',     target: 'E2e_Bics2_Nvme',               configId: '1',   build: 'windows-build', test: env.SOC2_SLAVENAME ],
+    [ name: 'Alamere_Jenkins_01',                soc: '1098R20',      customer: 'Standard',     target: 'E2e_Bics2',                    configId: '0',   build: 'windows-build', test: env.SOC2_SLAVENAME ],
+    [ name: 'Alamere_Jenkins_02',                soc: '1098R20',      customer: 'Internal',     target: 'E2e_Bics2_Nvme',               configId: '1',   build: 'windows-build', test: env.SOC2_SLAVENAME ],
 ]
 
 def stageCases = [
-    // Precommit
+    // Test Case
     "Flash_fw": [passedParser: this.&jsonTypePassedParser], 
-    //"FIO": [passedParser: this.&jsonTypePassedParser], 
-    //"marvo": [passedParser: this.&jsonTypePassedParser],
+    "FIO": [passedParser: this.&jsonTypePassedParser],
+    "marvo": [passedParser: this.&jsonTypePassedParser],   
     "IOL": [passedParser: this.&jsonTypePassedParser]
 ]
-def testcases = ["Flash_fw","IOL"]
-//def testcases = ["Flash_fw"]
-    
+def testcases = ["Flash_fw","FIO","IOL","marvo"]
 def testTasks = [:]
 
 toDo.each { task ->
     testTasks["$task.name"] = {
-        node("slave1") {     
-            git([url: 'https://github.com/yuanmin21/ym_test.git', branch: 'master'])
+        node("slave1") {           
             withEnv( //add variable into environment
                 ["SSH_ID=${configMap[task.test][task.configId]['SSH_ID']}",
+                "APC_IP=${configMap[task.test][task.configId]['APC_IP']}",
+                "APC_SLOT=${configMap[task.test][task.configId]['APC_SLOT']}",
                 "TCP_IP=${configMap[task.test][task.configId]['TCP_IP']}"]){                         
                 echo "SSH_ID is ${SSH_ID}"
-                echo "TCP_IP is ${TCP_IP}"              
+                echo "TCP_IP is ${TCP_IP}" 
+                echo "APC_SLOT is ${APC_SLOT}"             
                 def results = [:]
                 testcases.each { test ->
                     def settings = stageCases[test]
                     try{
                         // Run the different testing.
-                        //stage("$task.name ${test} testing"){
+                        stage("${test} testing ${task.name}"){
                             switch (test) {
                                 case "Flash_fw":
                                         timeout(time: 5, unit: 'MINUTES') {
@@ -82,28 +82,28 @@ toDo.each { task ->
                                         }
                                         sh script: "scp -r ${SSH_ID}:/home/workspace/Flash_fw ${WORKSPACE}"
                                         sh script: "ssh ${SSH_ID} 'sudo rm -Rf /home/workspace/Flash_fw'"
-                                        sh script: "ssh ${SSH_ID} 'sudo reboot'"
-                                        rebootTest(5)
+                                        //sh script: "ssh ${SSH_ID} 'sudo reboot'"
+                                        rebootTest(5,APC_IP,APC_SLOT)
                                         break
 
-                                
                                 case "FIO":
-                                    SSH_ID1
-                                    sh script: "ssh ${SSH_ID}@${TCP_IP} 'cd /home/svt/fio_script; python3 fio.py fio_test.ini tcp://10.85.149.105 marvell'"
-                                    sh script: "scp -r ${SSH_ID}@${TCP_IP}:/home/svt/fio_script/Logs/FIO/ root@10.18.134.101:/home/jenkins/workspace/Alamere_Test"
-                                    sh script: "ssh ${SSH_ID}@${TCP_IP} 'rm -r /home/svt/fio_script/Logs/FIO'"
+                                    timeout(time: 3, unit: 'MINUTES') {
+                                        sh script: "ssh ${SSH_ID} 'cd /home/svt/fio_script; python3 fio.py fio_test.ini tcp://${TCP_IP} marvell'"
+                                    }
+                                    sh script: "scp -r ${SSH_ID}:/home/svt/fio_script/Logs/FIO/ ${WORKSPACE}"
+                                    sh script: "ssh ${SSH_ID} 'rm -r /home/svt/fio_script/Logs/FIO'"
                                     break
 
                                 case "IOL":
-                                    SSH_ID2
+                                    timeout(time: 3, unit: 'HOURS') {
+                                    sh script: "ssh ${SSH_ID} 'cd /home/workspace/script; sudo python3 IOL_test.py /home/svt/iol_interact-9.0b/nvme/manage/ testcases -d tcp://${TCP_IP} -p marvell'"
+                                    }
                                     
-
-                                    sh script: "ssh ${SSH_ID}@${TCP_IP} 'cd /home/svt/fio_script; sudo  python3 IOL_test.py /home/svt/iol_interact-9.0b/nvme/manage/ testcases -d tcp://${TCP_IP} -p marvell'"
-                                    sh script: "scp -r ${SSH_ID}@${TCP_IP}:/home/svt/fio_script/Logs/FIO/ root@10.18.134.101:/home/jenkins/workspace/Alamere_Test"
-                                    sh script: "ssh ${SSH_ID}@${TCP_IP} 'rm -r /home/svt/fio_script/Logs/FIO'"
+                                    sh script: "scp -r ${SSH_ID}:/home/workspace/IOL ${WORKSPACE}"
+                                    sh script: "ssh ${SSH_ID} 'sudo rm -Rf /home/workspace/IOL'"
 
                                     break
-                                
+
                                 case "marvo":
                                     timeout(time: 3, unit: 'HOURS') {
                                         sh script: "ssh ${SSH_ID} 'cd /home/svt/marvo; xvfb-run -a python3 Marvo.py /home/svt/marvo /home/svt/marvo/PCIe tcp://${TCP_IP} marvell'"
@@ -112,18 +112,19 @@ toDo.each { task ->
                                     sh script: "ssh ${SSH_ID} 'rm -r /home/svt/marvo/Logs/marvo'"
                                     break
                             }
-                        //}                    
+                        }                    
                         // Collect all test results as a map 
                         Map currentTestResults = [
-                            (test): collectTestResults(                    
+                            (task.name): collectTestResults(                    
                                 test,
                                 settings.passedParser,
                                 task.name,
                                 )
                             ]
+                           
                         results << currentTestResults    
                         //echo "results is ${results}"
-                        writeFile(file: 'test.xml', text: resultsAsJUnit(currentTestResults, task.name))
+                        writeFile(file: 'test.xml', text: resultsAsJUnit(currentTestResults))
                         // Generate the Junit Report 
                         //archiveArtifacts(artifacts: '${test}.xml', excludes: null)
                         step([
@@ -136,9 +137,21 @@ toDo.each { task ->
                             */
                             echo "Testing failed due to $e"
                             switch (test) {
+                                case "Flash_fw":
+                                        sh script: "scp -r ${SSH_ID}:/home/workspace/Flash_fw ${WORKSPACE}"
+                                        sh script: "ssh ${SSH_ID} 'sudo rm -Rf /home/workspace/Flash_fw'"
+                                        //sh script: "ssh ${SSH_ID} 'sudo reboot'"
+                                        rebootTest(5,APC_IP,APC_SLOT)
+                                        break
                                 case "FIO":
                                     sh script: "scp -r ${SSH_ID}:/home/svt/fio_script/Logs/FIO/ ${WORKSPACE}"
                                     sh script: "ssh ${SSH_ID} 'rm -r /home/svt/fio_script/Logs/FIO'"
+                                    break
+
+                                case "IOL":                        
+                                    sh script: "scp -r ${SSH_ID}:/home/workspace/IOL ${WORKSPACE}"
+                                    sh script: "ssh ${SSH_ID} 'sudo rm -Rf /home/workspace/IOL'"
+
                                     break
                                 case "marvo":
                                     sh script: "scp -r ${SSH_ID}:/home/svt/marvo/Logs/marvo ${WORKSPACE}"
@@ -150,12 +163,12 @@ toDo.each { task ->
                             archiveArtifacts artifacts: "${test}.tar.gz", allowEmptyArchive: true
                             // Cleanup
                             sh "rm -rf ${test}/ ${test}.tar.gz"                            
-                            currentBuild.description = """<br /><a style="text-decoration: none; background-color:red; color:white" href="${env.BUILD_URL}artifact/${buildLog}"><b>Test failed: ${test}</b></a>"""
+                            currentBuild.description = """<br /><a style="text-decoration: none; background-color:red; color:white" href="${env.BUILD_URL}artifact/${test}_${TestName}.tar.gz"><b>Test failed: ${test}</b></a>"""
                         }finally {
                             // If there is no error, upload the test result table.    
                             // Publish the result table on the status overview.       
-                            currentBuild.description = currentBuild.description + "<br /></strong>${resultsAsTable(results, task.name)}"                               
-                            echo "tag"
+                            currentBuild.description = currentBuild.description + "<br /></strong>${resultsAsTable(results, test)}"                                
+                            
                         } 
                 }
             }                 
@@ -166,8 +179,7 @@ toDo.each { task ->
 timestamps {
     stage("Build") {
         echo "After Build"
-        
-        //currentBuild.description = "Fake Build Stage"        
+        currentBuild.description = "<strong><a href='${env.BUILD_URL}/flowGraphTable/'>View logs per step</a></strong>"      
     }
     stage("Test") {
         parallel testTasks
@@ -231,7 +243,7 @@ def jsonTypePassedParser(logFile, resultMap) {
  */
  
 @NonCPS
-String resultsAsTable(def testResults, String TestName) {
+String resultsAsTable(def testResults, String testCase) {
     StringWriter  stringWriter  = new StringWriter()
     MarkupBuilder markupBuilder = new MarkupBuilder(stringWriter)
 
@@ -240,21 +252,22 @@ String resultsAsTable(def testResults, String TestName) {
     markupBuilder.html {
         delegate.body {
             delegate.style(".passed { color: #468847; background-color: #dff0d8; border-color: #d6e9c6; } .failed { color: #b94a48; background-color: #f2dede; border-color: #eed3d7; }", type: 'text/css')
-            delegate.table {
+            delegate.table {                
                 testResults.each { test, testResult ->
-                    delegate.delegate.tr {
-                        delegate.td {
-                            echo "test name is ${TestName}"
-                            delegate.strong("[Stage] ${test}")
-                            delegate.a("Logs", href: "${env.BUILD_URL}/artifact/" + "${test}_${TestName}.tar.gz")
+                        delegate.delegate.tr {                            
+                            delegate.td {
+                                delegate.strong("[Stage] ${test}")
+                                delegate.a("Logs", href: "${env.BUILD_URL}/artifact/${testCase}_${test}.tar.gz")
+                                echo "testname is ${testCase}_${test}"
+                            }
+                        }
+                        testResult.each { testName, testPassed ->
+                            delegate.delegate.delegate.tr {
+                                delegate.td("$testName", class: testPassed ? 'passed' : 'failed')
+                            }
                         }
                     }
-                    testResult.each { testName, testPassed ->
-                        delegate.delegate.delegate.tr {
-                            delegate.td("$testName ${TestName}", class: testPassed ? 'passed' : 'failed')
-                        }
-                    }
-                }
+                
             }
         }
     }
@@ -267,14 +280,13 @@ String resultsAsTable(def testResults, String TestName) {
  */
 
 @NonCPS
-String resultsAsJUnit(def testResults, String TestName) {
+String resultsAsJUnit(def testResults) {
     StringWriter  stringWriter  = new StringWriter()
     MarkupBuilder markupBuilder = new MarkupBuilder(stringWriter)
     // All those delegate calls here are messing up the elegancy of the MarkupBuilder
     // but are needed due to https://issues.jenkins-ci.org/browse/JENKINS-32766
     markupBuilder.testsuites {
         testResults.each{ test, testresult ->
-            echo "test name is ${TestName}"
             delegate.delegate.testsuite(name: testresult.testName, tests: testresult.size(), failures: testresult.values().count(false)) {
                 testresult.each{ testName, testPassed ->
                     delegate.delegate.testcase(name: testName) {
@@ -290,15 +302,17 @@ String resultsAsJUnit(def testResults, String TestName) {
   return stringWriter.toString()
 }
 
-
-def rebootTest(retryCount){
+def rebootTest(retryCount,APC_IP,APC_SLOT){
   def errorCode = -1
   def uartFound = -1
   def retry = retryCount
   while((errorCode != 0  && uartFound == -1) && retry > 0){
     echo "-------------reboot-------"
-    sh script:"ssh $SSH_ID 'sudo shutdown now'",returnStatus:true
-    sh 'python3 $WORKSPACE/rebootTarget.py $APC_IP $APC_SLOT $TARGET_IP $SSH_ID'
+    sh script: 'curl -s http://Outlet$APC_SLOT:1234@{$APC_IP}/outlet?$APC_SLOT=OFF',returnStatus:true
+    sleep(10)
+    sh script: 'curl -s http://Outlet$APC_SLOT:1234@{$APC_IP}/outlet?$APC_SLOT=ON',returnStatus:true
+    sleep(10)
+    
     errorCode = sh script:'ssh $SSH_ID sudo modprobe nvme; ssh $SSH_ID ls /dev/nv*',returnStatus:true
     cmdString = sh script:'ssh pi@$TCP_IP lsusb', returnStdout:true
     uartFound = cmdString.indexOf("UART")
